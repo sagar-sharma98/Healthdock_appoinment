@@ -54,13 +54,15 @@ export default function PublicBookingPage() {
 
   // Sync color mode from booking page configuration
   useEffect(() => {
-    if (pageData?.page?.color_mode === 'Dark') {
+    const mode = pageData?.page?.color_mode;
+    if (mode === 'Dark') {
       setTheme('dark');
-    } else if (pageData?.page?.color_mode === 'Light') {
-      setTheme('light');
-    } else if (pageData?.page?.color_mode === 'System') {
+    } else if (mode === 'System') {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       setTheme(prefersDark ? 'dark' : 'light');
+    } else {
+      // Default to Light theme for patient booking
+      setTheme('light');
     }
   }, [pageData]);
 

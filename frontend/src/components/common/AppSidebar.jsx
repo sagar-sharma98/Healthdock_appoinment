@@ -104,8 +104,8 @@ export default function AppSidebar() {
     {
       id: 'Calendar',
       icon: CalendarIcon,
-      link: '/dashboard',
-      match: () => false,
+      link: '/calendar',
+      match: (pathname) => pathname.startsWith('/calendar'),
     },
 
     {
@@ -123,14 +123,14 @@ export default function AppSidebar() {
     {
       id: 'Workflows',
       icon: GitBranch,
-      link: '/dashboard',
-      match: () => false,
+      link: '/workflows',
+      match: (pathname) => pathname.startsWith('/workflows'),
     },
     {
       id: 'Settings',
       icon: Settings,
-      link: '/dashboard',
-      match: () => false,
+      link: '/settings',
+      match: (pathname) => pathname.startsWith('/settings'),
     },
   ];
 
@@ -207,12 +207,23 @@ export default function AppSidebar() {
           </div>
         </button>
 
-        <div className="px-3 py-1.5 flex items-center justify-between text-teal-400 hover:text-teal-300 cursor-pointer">
-          <span className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Explore add-ons</span>
+        {/* Upgrade / Pricing Link */}
+        <Link
+          to="/upgrade"
+          className={`w-full px-3 py-2 flex items-center justify-between rounded-xl transition-all cursor-pointer group ${
+            location.pathname.startsWith('/upgrade')
+              ? 'bg-teal-500/15 text-teal-300 font-semibold border border-teal-500/30'
+              : 'text-teal-400 hover:text-white hover:bg-slate-800/60'
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
+            <span className="font-semibold text-xs text-white">Upgrade</span>
           </span>
-        </div>
+          <span className="text-[10px] font-extrabold uppercase tracking-wider px-1.5 py-0.5 rounded bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 shadow-sm">
+            Pro
+          </span>
+        </Link>
 
         {/* User Profile Pill at bottom */}
         <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between px-2.5 py-2 rounded-lg bg-slate-900/60 border border-slate-800/50">

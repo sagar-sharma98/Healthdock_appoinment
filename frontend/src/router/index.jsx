@@ -16,6 +16,10 @@ import PublicBookingPage from '../pages/PublicBookingPage';
 import CreateBookingPage from '../pages/CreateBookingPage';
 import CreateUserPage from '../pages/CreateUserPage';
 import CreateLeavePage from '../pages/CreateLeavePage';
+import CalendarPage from '../pages/CalendarPage';
+import WorkflowsPage from '../pages/WorkflowsPage';
+import SettingsPage from '../pages/SettingsPage';
+import UpgradePage from '../pages/UpgradePage';
 
 import DashboardLayout from '../layouts/DashboardLayout';
 
@@ -82,6 +86,22 @@ export const router = createBrowserRouter([
           { path: 'create', element: <CreateUserPage /> },
           { path: 'edit/:id', element: <CreateUserPage /> },
         ],
+      },
+      {
+        path: '/calendar',
+        element: <CalendarPage />,
+      },
+      {
+        path: '/workflows',
+        element: <WorkflowsPage />,
+      },
+      {
+        path: '/settings',
+        element: <SettingsPage />,
+      },
+      {
+        path: '/upgrade',
+        element: <UpgradePage />,
       },
     ],
   },
