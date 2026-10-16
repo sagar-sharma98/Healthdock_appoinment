@@ -25,9 +25,23 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
   const navigate = useNavigate();
   const { theme, toggleTheme, doctor, triggerToast } = useApp();
 
-  const [userProfile, setUserProfile] = useState({
-    name: 'Dr. Sagar Sharma',
-    email: 'dr.sagar@healthdock.in',
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const userStr = localStorage.getItem('healthdock_user') || localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        return {
+          name: u.full_name || u.name || 'User',
+          email: u.email || '',
+          role: (u.role || '').toUpperCase(),
+        };
+      }
+    } catch (e) {}
+    return {
+      name: 'Dr. Sagar Sharma',
+      email: 'dr.sagar@healthdock.in',
+      role: '',
+    };
   });
 
   useEffect(() => {
@@ -38,6 +52,7 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
         setUserProfile({
           name: u.full_name || u.name || doctor?.name || 'Dr. Sagar Sharma',
           email: u.email || doctor?.email || 'dr.sagar@healthdock.in',
+          role: (u.role || doctor?.role || '').toUpperCase(),
         });
       } catch (e) {
         console.error(e);
@@ -46,6 +61,7 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
       setUserProfile({
         name: doctor.name || 'Dr. Sagar Sharma',
         email: doctor.email || 'dr.sagar@healthdock.in',
+        role: (doctor.role || '').toUpperCase(),
       });
     }
   }, [doctor]);
@@ -75,6 +91,8 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
     }
     navigate('/login');
   };
+
+  const isReceptionist = userProfile.role === 'RECEPTIONIST';
 
   const menuItems = [
     {
@@ -114,12 +132,16 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
       link: '/pages',
       match: (pathname) => pathname.startsWith('/pages'),
     },
-    {
-      id: 'Users',
-      icon: Users,
-      link: '/users',
-      match: (pathname) => pathname.startsWith('/users'),
-    },
+    ...(!isReceptionist
+      ? [
+          {
+            id: 'Users',
+            icon: Users,
+            link: '/users',
+            match: (pathname) => pathname.startsWith('/users'),
+          },
+        ]
+      : []),
     {
       id: 'Workflows',
       icon: GitBranch,

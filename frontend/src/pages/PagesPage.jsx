@@ -112,10 +112,20 @@ export default function PagesPage() {
   ];
 
   // Options for Doctor Dropdown
-  const doctorOptions = [
-    { label: 'All Doctors', value: 'ALL' },
-    { label: userProfile.name, value: 'current-doctor' },
-  ];
+  const doctorOptions = React.useMemo(() => {
+    const list = [{ label: 'All Doctors', value: 'ALL' }];
+    const uniqueDocs = new Set();
+    (pages || []).forEach(p => {
+      if (p.doctor_name) uniqueDocs.add(p.doctor_name);
+    });
+    if (uniqueDocs.size > 0) {
+      uniqueDocs.forEach(d => list.push({ label: d.startsWith('Dr.') ? d : `Dr. ${d}`, value: d }));
+    } else if ((userProfile.role || '').toUpperCase() !== 'RECEPTIONIST' && userProfile.name) {
+      const cleanName = userProfile.name.replace(/^Dr\.\s*/i, '');
+      list.push({ label: `Dr. ${cleanName}`, value: 'current-doctor' });
+    }
+    return list;
+  }, [pages, userProfile]);
 
   const handleCopyLink = (slug) => {
     const fullUrl = `${window.location.origin}/${slug}`;

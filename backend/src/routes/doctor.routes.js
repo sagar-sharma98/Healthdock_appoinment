@@ -265,6 +265,48 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
   }
 });
 
+// GET List of all doctors in the clinic / organization
+router.get('/clinic-doctors', authenticateToken, async (req, res) => {
+  try {
+    const { organizationId } = await resolveDoctorAndOrg(req.user);
+
+    let doctorsRes = await query(
+      `SELECT dp.id as doctor_profile_id,
+              u.id as user_id,
+              u.full_name as doctor_name,
+              u.email as doctor_email,
+              dp.specialty,
+              dp.consultation_fee
+       FROM doctor_profiles dp
+       JOIN users u ON dp.user_id = u.id
+       WHERE dp.organization_id = $1 OR dp.organization_id IN (
+         SELECT organization_id FROM organization_members WHERE user_id = $2
+       )
+       ORDER BY dp.created_at ASC`,
+      [organizationId, req.user.userId]
+    );
+
+    if (doctorsRes.rowCount === 0) {
+      doctorsRes = await query(
+        `SELECT dp.id as doctor_profile_id,
+                u.id as user_id,
+                u.full_name as doctor_name,
+                u.email as doctor_email,
+                dp.specialty,
+                dp.consultation_fee
+         FROM doctor_profiles dp
+         JOIN users u ON dp.user_id = u.id
+         ORDER BY dp.created_at ASC`
+      );
+    }
+
+    return res.json({ doctors: doctorsRes.rows });
+  } catch (err) {
+    console.error('Error fetching clinic doctors:', err);
+    return res.status(500).json({ error: 'Failed to fetch doctors' });
+  }
+});
+
 // Get Doctor's or Clinic's Appointments
 router.get('/appointments', authenticateToken, async (req, res) => {
   try {
@@ -272,10 +314,14 @@ router.get('/appointments', authenticateToken, async (req, res) => {
 
     const appointmentsRes = await query(
       `SELECT a.*, p.full_name as patient_name, p.phone as patient_phone, p.email as patient_email,
-              s.name as service_name
+              s.name as service_name,
+              COALESCE(du.full_name, 'Doctor') as doctor_name,
+              dp.specialty as doctor_specialty
        FROM appointments a
        JOIN patients p ON a.patient_id = p.id
        LEFT JOIN services s ON a.service_id = s.id
+       LEFT JOIN doctor_profiles dp ON a.doctor_profile_id = dp.id
+       LEFT JOIN users du ON dp.user_id = du.id
        WHERE (a.doctor_profile_id = $1 OR a.organization_id = $2)
        ORDER BY a.appointment_date DESC, a.start_time DESC`,
       [doctorProfileId, organizationId]
@@ -1071,6 +1117,10 @@ router.delete('/pages/:id', authenticateToken, async (req, res) => {
 // GET Users / Team Members for the organization
 router.get('/users', authenticateToken, async (req, res) => {
   try {
+    if ((req.user.role || '').toUpperCase() === 'RECEPTIONIST') {
+      return res.status(403).json({ error: 'Access denied: Receptionists cannot view or manage clinic users' });
+    }
+
     const organizationId = req.user.organizationId;
 
     const result = await query(
@@ -1099,6 +1149,10 @@ router.get('/users', authenticateToken, async (req, res) => {
 // POST Add User / Member
 router.post('/users', authenticateToken, async (req, res) => {
   try {
+    if ((req.user.role || '').toUpperCase() === 'RECEPTIONIST') {
+      return res.status(403).json({ error: 'Access denied: Receptionists cannot view or manage clinic users' });
+    }
+
     const { full_name, email, phone, role = 'DOCTOR', specialty = 'General Medicine', status = 'ACTIVE', password } = req.body;
     if (!full_name || !email) {
       return res.status(400).json({ error: 'Full name and email are required' });
@@ -1201,6 +1255,10 @@ router.post('/users', authenticateToken, async (req, res) => {
 // GET Single User by ID
 router.get('/users/:id', authenticateToken, async (req, res) => {
   try {
+    if ((req.user.role || '').toUpperCase() === 'RECEPTIONIST') {
+      return res.status(403).json({ error: 'Access denied: Receptionists cannot view or manage clinic users' });
+    }
+
     const { id } = req.params;
     const result = await query(
       `SELECT u.id, u.full_name, u.email, u.phone, u.avatar_url, 
@@ -1232,6 +1290,10 @@ router.get('/users/:id', authenticateToken, async (req, res) => {
 // PUT Update User
 router.put('/users/:id', authenticateToken, async (req, res) => {
   try {
+    if ((req.user.role || '').toUpperCase() === 'RECEPTIONIST') {
+      return res.status(403).json({ error: 'Access denied: Receptionists cannot view or manage clinic users' });
+    }
+
     const { id } = req.params;
     const { full_name, phone, role, status, specialty, password } = req.body;
 
@@ -1312,6 +1374,10 @@ router.put('/users/:id', authenticateToken, async (req, res) => {
 // DELETE User / Member
 router.delete('/users/:id', authenticateToken, async (req, res) => {
   try {
+    if ((req.user.role || '').toUpperCase() === 'RECEPTIONIST') {
+      return res.status(403).json({ error: 'Access denied: Receptionists cannot view or manage clinic users' });
+    }
+
     const { id } = req.params;
     const organizationId = req.user.organizationId;
 

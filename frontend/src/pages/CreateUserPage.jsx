@@ -63,10 +63,14 @@ export default function CreateUserPage() {
   });
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('healthdock_user');
+    const savedUser = localStorage.getItem('healthdock_user') || localStorage.getItem('user');
     if (savedUser) {
       try {
         const u = JSON.parse(savedUser);
+        if ((u.role || '').toUpperCase() === 'RECEPTIONIST') {
+          navigate('/dashboard', { replace: true });
+          return;
+        }
         setUserProfile((prev) => ({
           ...prev,
           name: u.full_name || prev.name,

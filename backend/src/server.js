@@ -49,4 +49,5 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 HealthDock Backend Server running on http://localhost:${PORT}`);
+  console.log(`📦 Database: ${process.env.DB_NAME || 'healthdock_db'} on ${process.env.DB_HOST || 'localhost'}`);
 });

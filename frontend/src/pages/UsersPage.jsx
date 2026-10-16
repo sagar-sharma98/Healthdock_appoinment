@@ -37,15 +37,18 @@ import {
   Activity,
 } from 'lucide-react';
 import CustomDropdown from '../components/common/CustomDropdown';
+import { useApp } from '../context/AppContext';
 
 export default function UsersPage() {
   const navigate = useNavigate();
+  const { triggerToast } = useApp() || {};
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeMenuUserId, setActiveMenuUserId] = useState(null);
+  const [isRestricted, setIsRestricted] = useState(false);
 
   const menuContainerRef = useRef(null);
 
@@ -95,6 +98,22 @@ export default function UsersPage() {
   };
 
   useEffect(() => {
+    try {
+      const userStr = localStorage.getItem('healthdock_user') || localStorage.getItem('user');
+      if (userStr) {
+        const u = JSON.parse(userStr);
+        if ((u.role || '').toUpperCase() === 'RECEPTIONIST') {
+          setIsRestricted(true);
+          setLoading(false);
+          if (triggerToast) {
+            triggerToast('Access Restricted', 'The Users tab is reserved for Clinic Administrators.', 'error');
+          }
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+      }
+    } catch (e) {}
+
     loadUsers();
   }, []);
 
@@ -194,6 +213,28 @@ export default function UsersPage() {
   const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+
+  if (isRestricted) {
+    return (
+      <main className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#F8FAFC] dark:bg-[#071224]">
+        <div className="w-16 h-16 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-500/20 text-rose-500 flex items-center justify-center mb-4 shadow-sm">
+          <Shield className="w-8 h-8" />
+        </div>
+        <h2 className="text-xl font-bold font-serif text-slate-800 dark:text-white">
+          Access Restricted
+        </h2>
+        <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mt-1.5 leading-relaxed">
+          User management and staff role administration is restricted to Clinic Administrators only.
+        </p>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="mt-5 px-4 py-2 bg-teal-500 text-white text-xs font-semibold rounded-xl hover:bg-teal-600 transition-colors shadow-sm cursor-pointer"
+        >
+          Return to Dashboard
+        </button>
+      </main>
+    );
+  }
 
   return (
     <main className="flex-1 flex flex-col h-full overflow-y-auto" ref={menuContainerRef}>

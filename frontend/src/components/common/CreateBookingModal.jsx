@@ -15,11 +15,34 @@ export default function CreateBookingModal({ isOpen, onClose, onBookingCreated, 
   const [startTime, setStartTime] = useState(initialTime || '10:30');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clinicDoctors, setClinicDoctors] = useState([]);
+  const [selectedDoctorId, setSelectedDoctorId] = useState('');
 
   React.useEffect(() => {
     if (isOpen) {
       if (initialDate) setAppointmentDate(initialDate);
       if (initialTime) setStartTime(initialTime);
+
+      // Fetch clinic doctors for receptionist or doctor
+      const fetchDoctors = async () => {
+        try {
+          const token = localStorage.getItem('healthdock_token');
+          if (!token) return;
+          const res = await fetch(`${API_BASE_URL}/api/doctor/clinic-doctors`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.doctors && data.doctors.length > 0) {
+              setClinicDoctors(data.doctors);
+              setSelectedDoctorId(data.doctors[0].doctor_profile_id);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchDoctors();
     }
   }, [isOpen, initialDate, initialTime]);
 
@@ -44,6 +67,7 @@ export default function CreateBookingModal({ isOpen, onClose, onBookingCreated, 
           patient_phone: patientPhone,
           patient_email: patientEmail,
           service_name: serviceName,
+          doctor_profile_id: selectedDoctorId || undefined,
           appointment_date: appointmentDate,
           start_time: `${startTime}:00`,
           patient_notes: notes,
@@ -175,6 +199,25 @@ export default function CreateBookingModal({ isOpen, onClose, onBookingCreated, 
                 />
               </div>
             </div>
+          </div>
+
+          {/* Doctor Selection */}
+          <div className="space-y-1.5">
+            <label className="font-semibold text-slate-700 dark:text-slate-300">
+              Doctor *
+            </label>
+            <CustomDropdown
+              value={selectedDoctorId}
+              onChange={(val) => setSelectedDoctorId(val)}
+              options={
+                clinicDoctors.length > 0
+                  ? clinicDoctors.map((doc) => ({
+                      value: doc.doctor_profile_id,
+                      label: `Dr. ${doc.doctor_name?.replace(/^Dr\.\s*/i, '')} (${doc.specialty || 'General'})`,
+                    }))
+                  : [{ value: '', label: 'Clinic Doctor' }]
+              }
+            />
           </div>
 
           {/* Service & Time Row */}

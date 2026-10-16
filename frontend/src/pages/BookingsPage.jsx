@@ -47,11 +47,28 @@ export default function BookingsPage() {
   const [appointments, setAppointments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [userProfile, setUserProfile] = useState({
-    name: doctor?.name || 'sagar sharma',
-    email: doctor?.email || 'sagarsharma9882@gmail.com',
-    slug: doctor?.bookingSlug || 'sagar-sharma',
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('healthdock_user') || localStorage.getItem('user');
+      if (savedUser) {
+        const u = JSON.parse(savedUser);
+        return {
+          name: u.full_name || u.name || 'User',
+          email: u.email || '',
+          role: (u.role || '').toUpperCase(),
+          slug: 'doctor',
+        };
+      }
+    } catch (e) {}
+    return {
+      name: doctor?.name || 'sagar sharma',
+      email: doctor?.email || 'sagarsharma9882@gmail.com',
+      role: '',
+      slug: doctor?.bookingSlug || 'sagar-sharma',
+    };
   });
+
+  const [clinicDoctors, setClinicDoctors] = useState([]);
 
   // Fetch appointments from backend
   const fetchAppointments = async () => {
@@ -74,8 +91,27 @@ export default function BookingsPage() {
     }
   };
 
+  // Fetch real clinic doctors
+  const fetchDoctors = async () => {
+    try {
+      const token = localStorage.getItem('healthdock_token');
+      if (!token) return;
+      const res = await fetch(`${API_BASE_URL}/api/doctor/clinic-doctors`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.doctors && data.doctors.length > 0) {
+          setClinicDoctors(data.doctors);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching clinic doctors:', err);
+    }
+  };
+
   useEffect(() => {
-    const savedUser = localStorage.getItem('healthdock_user');
+    const savedUser = localStorage.getItem('healthdock_user') || localStorage.getItem('user');
     if (savedUser) {
       try {
         const u = JSON.parse(savedUser);
@@ -83,12 +119,14 @@ export default function BookingsPage() {
           ...prev,
           name: u.full_name || prev.name,
           email: u.email || prev.email,
+          role: (u.role || prev.role || '').toUpperCase(),
         }));
       } catch (e) {
         console.error(e);
       }
     }
     fetchAppointments();
+    fetchDoctors();
   }, []);
 
   const menuItems = [
@@ -115,11 +153,48 @@ export default function BookingsPage() {
     { label: 'Rescheduled', value: 'RESCHEDULED', colorDot: 'bg-purple-500' },
   ];
 
-  // Options for Doctor Dropdown
-  const doctorOptions = [
-    { label: 'All Doctors', value: 'ALL' },
-    { label: `Dr. ${userProfile.name}`, value: 'current-doctor' },
-  ];
+  // Options for Doctor Dropdown - strictly actual doctors, never receptionists
+  const doctorOptions = React.useMemo(() => {
+    const isReceptionist = userProfile.role === 'RECEPTIONIST';
+    const list = [{ label: 'All Doctors', value: 'ALL' }];
+
+    if (clinicDoctors && clinicDoctors.length > 0) {
+      clinicDoctors.forEach((doc) => {
+        const rawName = doc.doctor_name || doc.full_name || 'Doctor';
+        const cleanName = rawName.replace(/^Dr\.\s*/i, '');
+        list.push({
+          label: `Dr. ${cleanName}`,
+          value: doc.doctor_profile_id || cleanName,
+        });
+      });
+    } else {
+      // Extract unique doctor names from appointments if available
+      const uniqueDocs = new Set();
+      appointments.forEach((apt) => {
+        if (apt.doctor_name) {
+          uniqueDocs.add(apt.doctor_name.replace(/^Dr\.\s*/i, ''));
+        }
+      });
+
+      if (uniqueDocs.size > 0) {
+        uniqueDocs.forEach((name) => {
+          list.push({
+            label: `Dr. ${name}`,
+            value: name,
+          });
+        });
+      } else if (!isReceptionist && userProfile.name) {
+        // Only if logged in user is a doctor or admin, not a receptionist
+        const cleanName = userProfile.name.replace(/^Dr\.\s*/i, '');
+        list.push({
+          label: `Dr. ${cleanName}`,
+          value: 'current-doctor',
+        });
+      }
+    }
+
+    return list;
+  }, [clinicDoctors, appointments, userProfile]);
 
   // Filter appointments
   const filteredAppointments = appointments.filter(apt => {
@@ -130,12 +205,22 @@ export default function BookingsPage() {
       const matchPhone = apt.patient_phone?.toLowerCase().includes(q);
       const matchToken = apt.daily_token?.toLowerCase().includes(q);
       const matchRef = apt.booking_reference?.toLowerCase().includes(q);
-      if (!matchName && !matchPhone && !matchToken && !matchRef) return false;
+      const matchDoc = apt.doctor_name?.toLowerCase().includes(q);
+      if (!matchName && !matchPhone && !matchToken && !matchRef && !matchDoc) return false;
     }
 
     // Status filter
     if (statusFilter !== 'ALL' && apt.status !== statusFilter) {
       return false;
+    }
+
+    // Doctor filter
+    if (doctorFilter !== 'ALL') {
+      const matchDocId = apt.doctor_profile_id === doctorFilter;
+      const aptDocName = (apt.doctor_name || '').toLowerCase().replace(/^dr\.\s*/i, '');
+      const filterDocVal = String(doctorFilter).toLowerCase().replace(/^dr\.\s*/i, '');
+      const matchDocName = aptDocName.includes(filterDocVal);
+      if (!matchDocId && !matchDocName) return false;
     }
 
     // Date filter
@@ -269,7 +354,7 @@ export default function BookingsPage() {
         <div className="p-6 lg:px-8 space-y-6">
           
           {/* Active Filter Pills (if any applied) */}
-          {(searchQuery || statusFilter !== 'ALL' || dateFilter !== 'ALL') && (
+          {(searchQuery || statusFilter !== 'ALL' || doctorFilter !== 'ALL' || dateFilter !== 'ALL') && (
             <div className="flex items-center gap-2 flex-wrap text-xs">
               <span className="text-slate-400 text-[11px]">Active Filters:</span>
               {searchQuery && (
@@ -282,6 +367,12 @@ export default function BookingsPage() {
                 <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-[11px]">
                   <span>Status: {statusFilter}</span>
                   <button onClick={() => setStatusFilter('ALL')}><X className="w-3 h-3" /></button>
+                </span>
+              )}
+              {doctorFilter !== 'ALL' && (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-500/20 text-teal-700 dark:text-teal-300 text-[11px]">
+                  <span>Doctor: {doctorOptions.find(d => d.value === doctorFilter)?.label || doctorFilter}</span>
+                  <button onClick={() => setDoctorFilter('ALL')}><X className="w-3 h-3" /></button>
                 </span>
               )}
               {dateFilter !== 'ALL' && (
@@ -303,7 +394,7 @@ export default function BookingsPage() {
           {/* Bookings List or Custom Empty State */}
           {filteredAppointments.length === 0 ? (
             <EmptyState
-              type={searchQuery || statusFilter !== 'ALL' || dateFilter !== 'ALL' ? 'no-search-results' : 'no-data'}
+              type={searchQuery || statusFilter !== 'ALL' || doctorFilter !== 'ALL' || dateFilter !== 'ALL' ? 'no-search-results' : 'no-data'}
               searchQuery={searchQuery}
               onCreateBooking={() => navigate('/bookings/new')}
               bookingSlug={userProfile.slug}
@@ -318,7 +409,7 @@ export default function BookingsPage() {
                     <tr>
                       <th className="px-5 py-3.5">Token</th>
                       <th className="px-5 py-3.5">Patient Details</th>
-                      <th className="px-5 py-3.5">Service</th>
+                      <th className="px-5 py-3.5">Service & Doctor</th>
                       <th className="px-5 py-3.5">Date & Time</th>
                       <th className="px-5 py-3.5">Status</th>
                       <th className="px-5 py-3.5 text-right">Actions</th>
@@ -348,11 +439,17 @@ export default function BookingsPage() {
                           </div>
                         </td>
 
-                        {/* Service */}
+                        {/* Service & Doctor */}
                         <td className="px-5 py-4 whitespace-nowrap">
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
-                            {apt.service_name || 'General Consultation'}
-                          </span>
+                          <div>
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {apt.service_name || 'General Consultation'}
+                            </span>
+                            <p className="text-[11px] font-medium text-teal-600 dark:text-teal-400 mt-0.5 flex items-center gap-1">
+                              <Stethoscope className="w-3 h-3 text-teal-500 flex-shrink-0" />
+                              <span>Dr. {apt.doctor_name ? apt.doctor_name.replace(/^Dr\.\s*/i, '') : 'Test doctor'}</span>
+                            </p>
+                          </div>
                         </td>
 
                         {/* Date & Time */}
