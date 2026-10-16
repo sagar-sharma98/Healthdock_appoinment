@@ -4,17 +4,24 @@ import { X, Calendar, Clock, User, Phone, Mail, FileText, Loader2, Plus, Stethos
 import { useApp } from '../../context/AppContext';
 import CustomDropdown from './CustomDropdown';
 
-export default function CreateBookingModal({ isOpen, onClose, onBookingCreated }) {
+export default function CreateBookingModal({ isOpen, onClose, onBookingCreated, initialDate, initialTime }) {
   const { triggerToast } = useApp();
 
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [patientEmail, setPatientEmail] = useState('');
   const [serviceName, setServiceName] = useState('Comprehensive Consultation (In-Person)');
-  const [appointmentDate, setAppointmentDate] = useState('2026-10-14');
-  const [startTime, setStartTime] = useState('10:30');
+  const [appointmentDate, setAppointmentDate] = useState(initialDate || new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState(initialTime || '10:30');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialDate) setAppointmentDate(initialDate);
+      if (initialTime) setStartTime(initialTime);
+    }
+  }, [isOpen, initialDate, initialTime]);
 
   if (!isOpen) return null;
 
