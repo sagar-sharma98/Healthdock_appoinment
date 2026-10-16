@@ -15,6 +15,8 @@ import {
   Search,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Moon,
   Sun,
   Cross,
@@ -167,6 +169,18 @@ export default function PagesPage() {
     return true;
   });
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, doctorFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPages.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedPages = filteredPages.slice(startIndex, startIndex + itemsPerPage);
+
   return (
     <>
       {/* Main Content Area */}
@@ -281,8 +295,8 @@ export default function PagesPage() {
             </div>
           ) : (
             /* Table of Pages */
-            <div className="w-full bg-white dark:bg-[#101927] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-visible">
-              <div className="overflow-x-auto">
+            <div className="w-full bg-white dark:bg-[#101927] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden min-h-[500px] flex flex-col justify-between">
+              <div className="overflow-x-auto flex-1">
                 <table className="w-full text-left border-collapse">
                   
                   {/* Table Header: PAGE, VISITS, TOOLS, MENU */}
@@ -297,7 +311,7 @@ export default function PagesPage() {
 
                   {/* Table Body */}
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs text-slate-700 dark:text-slate-200">
-                    {filteredPages.map((page) => {
+                    {paginatedPages.map((page) => {
                       const fullUrl = `${window.location.origin}/${page.slug}`;
                       const isCopied = copiedSlug === page.slug;
                       const isMenuOpen = activeMenuId === page.id;
@@ -433,10 +447,60 @@ export default function PagesPage() {
                 </table>
               </div>
 
-              {/* Table Footer Summary */}
-              <div className="px-6 py-3 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-                <span>Showing {filteredPages.length} public booking {filteredPages.length === 1 ? 'page' : 'pages'}</span>
-                <span className="font-mono text-[11px] text-teal-600 dark:text-teal-400 font-medium">All systems operational</span>
+              {/* Table Footer with Pagination */}
+              <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 mt-auto">
+                <div className="flex items-center gap-2">
+                  <span>
+                    Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{filteredPages.length === 0 ? 0 : startIndex + 1}</span> to{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.min(startIndex + itemsPerPage, filteredPages.length)}</span> of{' '}
+                    <span className="font-semibold text-slate-700 dark:text-slate-200">{filteredPages.length}</span> public booking {filteredPages.length === 1 ? 'page' : 'pages'}
+                  </span>
+                </div>
+
+                {/* Pagination Controls on the right */}
+                <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1 text-xs px-2.5 font-medium"
+                    title="Previous page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Prev</span>
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                      const isActive = pageNum === currentPage;
+                      return (
+                        <button
+                          key={pageNum}
+                          type="button"
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                            isActive
+                              ? 'bg-teal-500 text-white shadow-sm shadow-teal-500/30'
+                              : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1 text-xs px-2.5 font-medium"
+                    title="Next page"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           )}

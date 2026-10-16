@@ -15,6 +15,8 @@ import {
   Search,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Moon,
   Sun,
   Cross,
@@ -123,6 +125,18 @@ export default function HolidaysPage() {
     }, 250);
     return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedDoctorId, selectedLeaveType, selectedLeaveStatus]);
+
+  const totalPages = Math.max(1, Math.ceil(doctorLeaves.length / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedLeaves = doctorLeaves.slice(startIndex, startIndex + itemsPerPage);
 
   // Navigation Items
   const menuItems = [
@@ -440,7 +454,7 @@ export default function HolidaysPage() {
         {/* Content Body */}
         <div className="p-6 lg:px-8 space-y-6">
           {/* Leaves Table */}
-          <div className="bg-white dark:bg-[#0E1624] rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
+          <div className="bg-white dark:bg-[#0E1624] rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs min-h-[500px] flex flex-col justify-between">
             {loading ? (
               <div className="py-24 flex flex-col items-center justify-center gap-3 text-slate-400">
                 <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
@@ -469,103 +483,161 @@ export default function HolidaysPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0A101D] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
-                      <th className="py-3.5 px-5">Consulting Doctor</th>
-                      <th className="py-3.5 px-5">Classification</th>
-                      <th className="py-3.5 px-5">Shift Coverage</th>
-                      <th className="py-3.5 px-5">Date Range</th>
-                      <th className="py-3.5 px-5">Reason / Handover</th>
-                      <th className="py-3.5 px-5">Status</th>
-                      <th className="py-3.5 px-5 text-right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                    {doctorLeaves.map((leave) => {
-                      const initial = leave.doctor_name ? leave.doctor_name.charAt(0).toUpperCase() : 'D';
-                      return (
-                        <tr
-                          key={leave.id}
-                          className="hover:bg-slate-50/50 dark:hover:bg-[#121B2B]/40 transition-colors"
-                        >
-                          {/* Doctor */}
-                          <td className="py-4 px-5">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
-                                {initial}
+              <>
+                <div className="overflow-x-auto flex-1">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0A101D] text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+                        <th className="py-3.5 px-5">Consulting Doctor</th>
+                        <th className="py-3.5 px-5">Classification</th>
+                        <th className="py-3.5 px-5">Shift Coverage</th>
+                        <th className="py-3.5 px-5">Date Range</th>
+                        <th className="py-3.5 px-5">Reason / Handover</th>
+                        <th className="py-3.5 px-5">Status</th>
+                        <th className="py-3.5 px-5 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                      {paginatedLeaves.map((leave) => {
+                        const initial = leave.doctor_name ? leave.doctor_name.charAt(0).toUpperCase() : 'D';
+                        return (
+                          <tr
+                            key={leave.id}
+                            className="hover:bg-slate-50/50 dark:hover:bg-[#121B2B]/40 transition-colors"
+                          >
+                            {/* Doctor */}
+                            <td className="py-4 px-5">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                  {initial}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                    {leave.doctor_name || 'Dr. Sagar Sharma'}
+                                  </p>
+                                  <p className="text-[11px] text-slate-400 truncate">
+                                    {leave.specialty || 'General Medicine'} {leave.doctor_email ? `• ${leave.doctor_email}` : ''}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="font-semibold text-slate-900 dark:text-white truncate">
-                                  {leave.doctor_name || 'Dr. Sagar Sharma'}
-                                </p>
-                                <p className="text-[11px] text-slate-400 truncate">
-                                  {leave.specialty || 'General Medicine'} {leave.doctor_email ? `• ${leave.doctor_email}` : ''}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
+                            </td>
 
-                          {/* Classification */}
-                          <td className="py-4 px-5 whitespace-nowrap">
-                            {renderLeaveTypeBadge(leave.leave_type)}
-                          </td>
+                            {/* Classification */}
+                            <td className="py-4 px-5 whitespace-nowrap">
+                              {renderLeaveTypeBadge(leave.leave_type)}
+                            </td>
 
-                          {/* Shift Coverage */}
-                          <td className="py-4 px-5 whitespace-nowrap">
-                            {renderSessionBadge(leave.session)}
-                          </td>
+                            {/* Shift Coverage */}
+                            <td className="py-4 px-5 whitespace-nowrap">
+                              {renderSessionBadge(leave.session)}
+                            </td>
 
-                          {/* Date Range */}
-                          <td className="py-4 px-5 whitespace-nowrap">
-                            {formatDateRange(leave.start_date, leave.end_date)}
-                          </td>
+                            {/* Date Range */}
+                            <td className="py-4 px-5 whitespace-nowrap">
+                              {formatDateRange(leave.start_date, leave.end_date)}
+                            </td>
 
-                          {/* Reason */}
-                          <td className="py-4 px-5 max-w-xs">
-                            <p className="text-slate-600 dark:text-slate-300 line-clamp-2">
-                              {leave.reason ? leave.reason : <span className="text-slate-400 italic">No notes provided</span>}
-                            </p>
-                          </td>
+                            {/* Reason */}
+                            <td className="py-4 px-5 max-w-xs">
+                              <p className="text-slate-600 dark:text-slate-300 line-clamp-2">
+                                {leave.reason ? leave.reason : <span className="text-slate-400 italic">No notes provided</span>}
+                              </p>
+                            </td>
 
-                          {/* Status */}
-                          <td className="py-4 px-5 whitespace-nowrap">
-                            {leave.status === 'APPROVED' ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                Approved
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                                Pending
-                              </span>
-                            )}
-                          </td>
+                            {/* Status */}
+                            <td className="py-4 px-5 whitespace-nowrap">
+                              {leave.status === 'APPROVED' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  Approved
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                  Pending
+                                </span>
+                              )}
+                            </td>
 
-                          {/* Action */}
-                          <td className="py-4 px-5 text-right whitespace-nowrap">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setDeleteTarget({
-                                  id: leave.id,
-                                  name: `${leave.doctor_name || 'Doctor'} (${leave.start_date})`,
-                                })
-                              }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                              title="Delete leave"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                            {/* Action */}
+                            <td className="py-4 px-5 text-right whitespace-nowrap">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setDeleteTarget({
+                                    id: leave.id,
+                                    name: `${leave.doctor_name || 'Doctor'} (${leave.start_date})`,
+                                  })
+                                }
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                title="Delete leave"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Table Footer with Pagination */}
+                <div className="px-6 py-3.5 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 mt-auto">
+                  <div className="flex items-center gap-2">
+                    <span>
+                      Showing <span className="font-semibold text-slate-700 dark:text-slate-200">{doctorLeaves.length === 0 ? 0 : startIndex + 1}</span> to{' '}
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{Math.min(startIndex + itemsPerPage, doctorLeaves.length)}</span> of{' '}
+                      <span className="font-semibold text-slate-700 dark:text-slate-200">{doctorLeaves.length}</span> doctor {doctorLeaves.length === 1 ? 'leave' : 'leaves'}
+                    </span>
+                  </div>
+
+                  {/* Pagination Controls on the right */}
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1 text-xs px-2.5 font-medium"
+                      title="Previous page"
+                    >
+                      <ChevronLeft className="w-3.5 h-3.5" />
+                      <span>Prev</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => {
+                        const isActive = pageNum === currentPage;
+                        return (
+                          <button
+                            key={pageNum}
+                            type="button"
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-7 h-7 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-teal-500 text-white shadow-sm shadow-teal-500/30'
+                                : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages || totalPages === 0}
+                      className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed text-slate-600 dark:text-slate-300 transition-colors shadow-xs cursor-pointer flex items-center gap-1 text-xs px-2.5 font-medium"
+                      title="Next page"
+                    >
+                      <span>Next</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
