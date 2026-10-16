@@ -126,10 +126,14 @@ export async function getDoctorSlotsForDate(doctorProfileId, dateStr, organizati
 
   for (const shiftCfg of shiftConfigs) {
     // Find matching schedule for this shift, or fallback to an active schedule that covers this shift's window
-    let sched = schedules.find(s => s.shift_type === shiftCfg.type);
+    let sched = schedules.find(s => s.shift_type === shiftCfg.type || s.shift_type === 'BOTH');
     if (!sched && schedules.length > 0) {
       // Check if any schedule covers this window (e.g. 9-17)
       for (const s of schedules) {
+        if (s.shift_type === 'BOTH') {
+          sched = s;
+          break;
+        }
         const tb = s.time_blocks?.[0];
         const tbStart = tb ? timeToMinutes(tb.start_time) : 9 * 60;
         const tbEnd = tb ? timeToMinutes(tb.end_time) : 17 * 60;

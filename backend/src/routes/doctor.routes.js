@@ -623,58 +623,74 @@ router.post('/schedules', authenticateToken, async (req, res) => {
     // Check if batch payload
     if (Array.isArray(req.body.days)) {
       const {
-        shift_type = 'MORNING',
-        slot_duration_minutes = 30,
+        shift_type = 'BOTH',
+        slot_duration_minutes = 10,
         max_patients_per_slot = 1,
         max_accompanying_persons = 0,
         days = [],
       } = req.body;
 
       const savedSchedules = [];
+      const shiftsToSave = (shift_type === 'BOTH') ? ['MORNING', 'EVENING'] : [shift_type];
 
-      for (const item of days) {
-        const dayOfWeek = parseInt(item.day_of_week, 10);
-        const isActive = Boolean(item.is_active);
-        const startTime = item.start_time || (shift_type === 'EVENING' ? '14:00:00' : '09:00:00');
-        const endTime = item.end_time || (shift_type === 'EVENING' ? '18:00:00' : '13:00:00');
+      for (const sType of shiftsToSave) {
+        for (const item of days) {
+          const dayOfWeek = parseInt(item.day_of_week, 10);
+          const isActive = Boolean(item.is_active);
 
-        const schedRes = await query(
-          `INSERT INTO availability_schedules (
-             doctor_profile_id, day_of_week, shift_type,
-             slot_duration_minutes, max_patients_per_slot, max_accompanying_persons, is_active
-           ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-           ON CONFLICT (doctor_profile_id, day_of_week, shift_type) 
-           DO UPDATE SET 
-             is_active = EXCLUDED.is_active,
-             slot_duration_minutes = EXCLUDED.slot_duration_minutes,
-             max_patients_per_slot = EXCLUDED.max_patients_per_slot,
-             max_accompanying_persons = EXCLUDED.max_accompanying_persons
-           RETURNING *`,
-          [
-            doctorProfileId,
-            dayOfWeek,
-            shift_type,
-            parseInt(slot_duration_minutes, 10),
-            parseInt(max_patients_per_slot, 10),
-            parseInt(max_accompanying_persons, 10),
-            isActive,
-          ]
-        );
+          let startTime, endTime;
+          if (sType === 'MORNING') {
+            startTime = item.morning_start_time || (shift_type === 'MORNING' ? item.start_time : '09:00:00');
+            endTime = item.morning_end_time || (shift_type === 'MORNING' ? item.end_time : '13:00:00');
+          } else if (sType === 'EVENING') {
+            startTime = item.evening_start_time || (shift_type === 'EVENING' ? item.start_time : '14:00:00');
+            endTime = item.evening_end_time || (shift_type === 'EVENING' ? item.end_time : '18:00:00');
+          } else {
+            startTime = item.start_time || '09:00:00';
+            endTime = item.end_time || '17:00:00';
+          }
 
-        const schedule = schedRes.rows[0];
+          if (startTime.length === 5) startTime += ':00';
+          if (endTime.length === 5) endTime += ':00';
 
-        // Reset and insert time block if active
-        await query(`DELETE FROM schedule_time_blocks WHERE schedule_id = $1`, [schedule.id]);
-
-        if (isActive) {
-          await query(
-            `INSERT INTO schedule_time_blocks (schedule_id, start_time, end_time, max_tokens_per_slot)
-             VALUES ($1, $2, $3, $4)`,
-            [schedule.id, startTime, endTime, parseInt(max_patients_per_slot, 10)]
+          const schedRes = await query(
+            `INSERT INTO availability_schedules (
+               doctor_profile_id, day_of_week, shift_type,
+               slot_duration_minutes, max_patients_per_slot, max_accompanying_persons, is_active
+             ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (doctor_profile_id, day_of_week, shift_type) 
+             DO UPDATE SET 
+               is_active = EXCLUDED.is_active,
+               slot_duration_minutes = EXCLUDED.slot_duration_minutes,
+               max_patients_per_slot = EXCLUDED.max_patients_per_slot,
+               max_accompanying_persons = EXCLUDED.max_accompanying_persons
+             RETURNING *`,
+            [
+              doctorProfileId,
+              dayOfWeek,
+              sType,
+              parseInt(slot_duration_minutes, 10),
+              parseInt(max_patients_per_slot, 10),
+              parseInt(max_accompanying_persons, 10),
+              isActive,
+            ]
           );
-        }
 
-        savedSchedules.push(schedule);
+          const schedule = schedRes.rows[0];
+
+          // Reset and insert time block if active
+          await query(`DELETE FROM schedule_time_blocks WHERE schedule_id = $1`, [schedule.id]);
+
+          if (isActive) {
+            await query(
+              `INSERT INTO schedule_time_blocks (schedule_id, start_time, end_time, max_tokens_per_slot)
+               VALUES ($1, $2, $3, $4)`,
+              [schedule.id, startTime, endTime, parseInt(max_patients_per_slot, 10)]
+            );
+          }
+
+          savedSchedules.push(schedule);
+        }
       }
 
       return res.status(201).json({
@@ -687,8 +703,8 @@ router.post('/schedules', authenticateToken, async (req, res) => {
     // Single schedule fallback
     const {
       day_of_week,
-      shift_type = 'MORNING',
-      slot_duration_minutes = 30,
+      shift_type = 'BOTH',
+      slot_duration_minutes = 10,
       max_patients_per_slot = 1,
       max_accompanying_persons = 0,
       start_time = '09:00:00',
@@ -700,39 +716,48 @@ router.post('/schedules', authenticateToken, async (req, res) => {
       return res.status(400).json({ error: 'day_of_week is required (0 for Sunday to 6 for Saturday)' });
     }
 
-    const schedRes = await query(
-      `INSERT INTO availability_schedules (
-         doctor_profile_id, day_of_week, shift_type,
-         slot_duration_minutes, max_patients_per_slot, max_accompanying_persons, is_active
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-       ON CONFLICT (doctor_profile_id, day_of_week, shift_type) 
-       DO UPDATE SET 
-         is_active = EXCLUDED.is_active,
-         slot_duration_minutes = EXCLUDED.slot_duration_minutes,
-         max_patients_per_slot = EXCLUDED.max_patients_per_slot,
-         max_accompanying_persons = EXCLUDED.max_accompanying_persons
-       RETURNING *`,
-      [
-        doctorProfileId,
-        parseInt(day_of_week, 10),
-        shift_type,
-        parseInt(slot_duration_minutes, 10),
-        parseInt(max_patients_per_slot, 10),
-        parseInt(max_accompanying_persons, 10),
-        is_active,
-      ]
-    );
+    const singleShifts = (shift_type === 'BOTH') ? ['MORNING', 'EVENING'] : [shift_type];
+    const results = [];
 
-    const schedule = schedRes.rows[0];
+    for (const sType of singleShifts) {
+      const sStart = sType === 'EVENING' ? '14:00:00' : (start_time.length === 5 ? `${start_time}:00` : start_time);
+      const sEnd = sType === 'EVENING' ? '18:00:00' : (end_time.length === 5 ? `${end_time}:00` : end_time);
 
-    await query(`DELETE FROM schedule_time_blocks WHERE schedule_id = $1`, [schedule.id]);
-
-    if (is_active) {
-      await query(
-        `INSERT INTO schedule_time_blocks (schedule_id, start_time, end_time, max_tokens_per_slot)
-         VALUES ($1, $2, $3, $4)`,
-        [schedule.id, start_time, end_time, parseInt(max_patients_per_slot, 10)]
+      const schedRes = await query(
+        `INSERT INTO availability_schedules (
+           doctor_profile_id, day_of_week, shift_type,
+           slot_duration_minutes, max_patients_per_slot, max_accompanying_persons, is_active
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+         ON CONFLICT (doctor_profile_id, day_of_week, shift_type) 
+         DO UPDATE SET 
+           is_active = EXCLUDED.is_active,
+           slot_duration_minutes = EXCLUDED.slot_duration_minutes,
+           max_patients_per_slot = EXCLUDED.max_patients_per_slot,
+           max_accompanying_persons = EXCLUDED.max_accompanying_persons
+         RETURNING *`,
+        [
+          doctorProfileId,
+          parseInt(day_of_week, 10),
+          sType,
+          parseInt(slot_duration_minutes, 10),
+          parseInt(max_patients_per_slot, 10),
+          parseInt(max_accompanying_persons, 10),
+          is_active,
+        ]
       );
+
+      const schedule = schedRes.rows[0];
+
+      await query(`DELETE FROM schedule_time_blocks WHERE schedule_id = $1`, [schedule.id]);
+
+      if (is_active) {
+        await query(
+          `INSERT INTO schedule_time_blocks (schedule_id, start_time, end_time, max_tokens_per_slot)
+           VALUES ($1, $2, $3, $4)`,
+          [schedule.id, sStart, sEnd, parseInt(max_patients_per_slot, 10)]
+        );
+      }
+      results.push(schedule);
     }
 
     return res.status(201).json({

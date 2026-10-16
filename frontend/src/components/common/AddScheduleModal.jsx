@@ -22,7 +22,7 @@ export default function AddScheduleModal({
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]); // Mon - Fri default
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('17:00');
-  const [slotDuration, setSlotDuration] = useState('30');
+  const [slotDuration, setSlotDuration] = useState('10');
   const [maxTokens, setMaxTokens] = useState('1');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -218,6 +218,7 @@ export default function AddScheduleModal({
                 value={slotDuration}
                 onChange={(val) => setSlotDuration(val)}
                 options={[
+                  { value: '10', label: '10 minutes (Default)' },
                   { value: '15', label: '15 minutes' },
                   { value: '20', label: '20 minutes' },
                   { value: '30', label: '30 minutes' },

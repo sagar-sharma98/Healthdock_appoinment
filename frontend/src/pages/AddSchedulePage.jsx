@@ -42,8 +42,8 @@ export default function AddSchedulePage() {
   const navigate = useNavigate();
 
   // Top Configuration Dropdowns
-  const [shiftType, setShiftType] = useState('MORNING'); // 'MORNING' | 'EVENING'
-  const [slotDuration, setSlotDuration] = useState('30'); // 10, 15, 30, 45, 60
+  const [shiftType, setShiftType] = useState('BOTH'); // 'BOTH' | 'MORNING' | 'EVENING'
+  const [slotDuration, setSlotDuration] = useState('10'); // 10, 15, 30, 45, 60
   const [patientCount, setPatientCount] = useState('1'); // 1, 2, 3, 4, 5
   const [accompanyingPeople, setAccompanyingPeople] = useState('1'); // 0, 1, 2, 3
 
@@ -55,7 +55,11 @@ export default function AddSchedulePage() {
       short: day.short,
       is_available: day.id !== 0, // Mon-Sat active by default, Sunday off
       start_time: '09:00',
-      end_time: '13:00',
+      end_time: '18:00',
+      morning_start_time: '09:00',
+      morning_end_time: '13:00',
+      evening_start_time: '14:00',
+      evening_end_time: '18:00',
     }));
   });
 
@@ -85,19 +89,40 @@ export default function AddSchedulePage() {
   }, []);
 
   // When shiftType changes, adjust default start and end times:
+  // Both: Morning (09:00-13:00) & Evening (14:00-18:00)
   // Morning: 09:00 to 13:00 (9 AM to 1 PM)
   // Evening: 14:00 to 18:00 (2 PM to 6 PM)
   useEffect(() => {
-    const defaultStart = shiftType === 'EVENING' ? '14:00' : '09:00';
-    const defaultEnd = shiftType === 'EVENING' ? '18:00' : '13:00';
-
-    setDaysSchedule(prev =>
-      prev.map(day => ({
-        ...day,
-        start_time: defaultStart,
-        end_time: defaultEnd,
-      }))
-    );
+    if (shiftType === 'MORNING') {
+      setDaysSchedule(prev =>
+        prev.map(day => ({
+          ...day,
+          start_time: '09:00',
+          end_time: '13:00',
+        }))
+      );
+    } else if (shiftType === 'EVENING') {
+      setDaysSchedule(prev =>
+        prev.map(day => ({
+          ...day,
+          start_time: '14:00',
+          end_time: '18:00',
+        }))
+      );
+    } else {
+      // BOTH
+      setDaysSchedule(prev =>
+        prev.map(day => ({
+          ...day,
+          start_time: '09:00',
+          end_time: '18:00',
+          morning_start_time: day.morning_start_time || '09:00',
+          morning_end_time: day.morning_end_time || '13:00',
+          evening_start_time: day.evening_start_time || '14:00',
+          evening_end_time: day.evening_end_time || '18:00',
+        }))
+      );
+    }
   }, [shiftType]);
 
   // Toggle day availability
@@ -109,6 +134,17 @@ export default function AddSchedulePage() {
         }
         return day;
       })
+    );
+  };
+
+  // Toggle all days
+  const handleToggleAllDays = () => {
+    const allActive = daysSchedule.every(d => d.is_available);
+    setDaysSchedule(prev =>
+      prev.map(day => ({
+        ...day,
+        is_available: !allActive,
+      }))
     );
   };
 
@@ -126,12 +162,13 @@ export default function AddSchedulePage() {
 
   // Options for Dropdowns
   const shiftOptions = [
+    { label: 'Both Shifts (Morning & Evening)', value: 'BOTH', icon: Sparkles },
     { label: 'Morning Shift (09:00 AM - 01:00 PM)', value: 'MORNING', icon: Sun },
     { label: 'Evening Shift (02:00 PM - 06:00 PM)', value: 'EVENING', icon: Sunset },
   ];
 
   const slotDurationOptions = [
-    { label: '10 mins', value: '10' },
+    { label: '10 mins (Default)', value: '10' },
     { label: '15 mins', value: '15' },
     { label: '30 mins (Standard)', value: '30' },
     { label: '45 mins', value: '45' },
@@ -168,9 +205,22 @@ export default function AddSchedulePage() {
 
     // Validate times for active days
     for (const d of daysSchedule) {
-      if (d.is_available && d.start_time >= d.end_time) {
-        setError(`Shift end time must be after start time on ${d.name}`);
-        return;
+      if (d.is_available) {
+        if (shiftType === 'BOTH') {
+          if (d.morning_start_time >= d.morning_end_time) {
+            setError(`Morning shift end time must be after start time on ${d.name}`);
+            return;
+          }
+          if (d.evening_start_time >= d.evening_end_time) {
+            setError(`Evening shift end time must be after start time on ${d.name}`);
+            return;
+          }
+        } else {
+          if (d.start_time >= d.end_time) {
+            setError(`Shift end time must be after start time on ${d.name}`);
+            return;
+          }
+        }
       }
     }
 
@@ -188,6 +238,10 @@ export default function AddSchedulePage() {
           is_active: d.is_available,
           start_time: `${d.start_time}:00`,
           end_time: `${d.end_time}:00`,
+          morning_start_time: `${d.morning_start_time || '09:00'}:00`,
+          morning_end_time: `${d.morning_end_time || '13:00'}:00`,
+          evening_start_time: `${d.evening_start_time || '14:00'}:00`,
+          evening_end_time: `${d.evening_end_time || '18:00'}:00`,
         })),
       };
 
@@ -320,7 +374,11 @@ export default function AddSchedulePage() {
                   className="w-full"
                 />
                 <span className="text-[10px] text-slate-400 block">
-                  {shiftType === 'MORNING' ? 'Times default to 9:00 AM - 1:00 PM' : 'Times default to 2:00 PM - 6:00 PM'}
+                  {shiftType === 'BOTH'
+                    ? 'Includes Morning (09:00 AM - 01:00 PM) & Evening (02:00 PM - 06:00 PM)'
+                    : shiftType === 'MORNING'
+                    ? 'Times default to 09:00 AM - 01:00 PM'
+                    : 'Times default to 02:00 PM - 06:00 PM'}
                 </span>
               </div>
 
@@ -336,7 +394,7 @@ export default function AddSchedulePage() {
                   className="w-full"
                 />
                 <span className="text-[10px] text-slate-400 block">
-                  Length of each consultation window
+                  Length of each consultation window (default: 10 mins)
                 </span>
               </div>
 
@@ -375,22 +433,33 @@ export default function AddSchedulePage() {
             </div>
           </div>
 
-          {/* Section 2: Days of the Week (Sunday to Saturday) with Start/End Times and Available/Unavailable Switch */}
+          {/* Section 2: Days of the Week (Sunday to Saturday) with Check Type Icon and Working Hours */}
           <div className="bg-white dark:bg-[#101927] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
             
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div>
                 <h2 className="font-serif font-bold text-base text-[#0B192C] dark:text-white">
                   Weekly Schedule & Working Hours
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Toggle availability switch for each day from Sunday to Saturday and set consultation hours.
+                  Select available days with the check icon and adjust your shift consultation hours.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleToggleAllDays}
+                  className="text-xs font-semibold text-teal-600 dark:text-teal-400 hover:text-teal-700 dark:hover:text-teal-300 underline underline-offset-2 transition-colors cursor-pointer"
+                >
+                  {daysSchedule.every(d => d.is_available) ? 'Uncheck All Days' : 'Check All Days'}
+                </button>
                 <span className="text-[11px] font-mono px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-semibold border border-teal-500/20">
-                  {shiftType === 'MORNING' ? 'Morning Shift (9 AM – 1 PM)' : 'Evening Shift (2 PM – 6 PM)'}
+                  {shiftType === 'BOTH'
+                    ? 'Both Shifts (Morning & Evening)'
+                    : shiftType === 'MORNING'
+                    ? 'Morning Shift (9 AM – 1 PM)'
+                    : 'Evening Shift (2 PM – 6 PM)'}
                 </span>
               </div>
             </div>
@@ -401,32 +470,33 @@ export default function AddSchedulePage() {
                 return (
                   <div
                     key={day.day_of_week}
-                    className={`py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors ${
+                    className={`py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 transition-colors ${
                       day.is_available ? '' : 'opacity-60 bg-slate-50/40 dark:bg-slate-900/20 rounded-xl px-2'
                     }`}
                   >
                     
-                    {/* Day Name and Switch Toggle */}
-                    <div className="flex items-center gap-4 min-w-[200px]">
+                    {/* Check Type Icon and Day Label */}
+                    <div className="flex items-center gap-3.5 min-w-[210px]">
                       
-                      {/* Availability Switch Button */}
+                      {/* Check Type Icon (Checkbox) */}
                       <button
                         type="button"
                         onClick={() => handleToggleDay(idx)}
-                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          day.is_available ? 'bg-teal-500' : 'bg-slate-300 dark:bg-slate-700'
+                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
+                          day.is_available
+                            ? 'bg-teal-500 border-teal-500 text-white shadow-sm shadow-teal-500/30 ring-2 ring-teal-500/20'
+                            : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-transparent hover:border-teal-400'
                         }`}
-                        title={day.is_available ? 'Click to make unavailable' : 'Click to make available'}
+                        title={day.is_available ? `Click to uncheck ${day.name}` : `Click to check ${day.name}`}
                       >
-                        <span
-                          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                            day.is_available ? 'translate-x-5' : 'translate-x-0'
-                          }`}
-                        />
+                        <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform ${day.is_available ? 'scale-100 opacity-100' : 'scale-50 opacity-0'}`} />
                       </button>
 
-                      {/* Day Label & Status Badge */}
-                      <div>
+                      {/* Day Name & Badge */}
+                      <div 
+                        onClick={() => handleToggleDay(idx)}
+                        className="cursor-pointer select-none"
+                      >
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-sm text-slate-900 dark:text-white font-serif">
                             {day.name}
@@ -448,39 +518,78 @@ export default function AddSchedulePage() {
 
                     </div>
 
-                    {/* Start Time & End Time Inputs */}
+                    {/* Working Hours Inputs */}
                     <div className="flex items-center gap-3">
                       
                       {day.is_available ? (
-                        <div className="flex items-center gap-2 text-xs">
-                          
-                          {/* Start Time */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-400 font-medium">Start:</span>
-                            <input
-                              type="time"
-                              value={day.start_time}
-                              onChange={(e) => handleTimeChange(idx, 'start_time', e.target.value)}
-                              className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm"
-                            />
+                        shiftType === 'BOTH' ? (
+                          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+                            {/* Morning Shift */}
+                            <div className="flex items-center gap-1.5 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-1.5 rounded-xl border border-amber-200/70 dark:border-amber-800/50 shadow-sm">
+                              <Sun className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                              <span className="text-[11px] font-bold text-amber-800 dark:text-amber-200">Morning:</span>
+                              <input
+                                type="time"
+                                value={day.morning_start_time || '09:00'}
+                                onChange={(e) => handleTimeChange(idx, 'morning_start_time', e.target.value)}
+                                className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                              />
+                              <span className="text-slate-400 font-medium">to</span>
+                              <input
+                                type="time"
+                                value={day.morning_end_time || '13:00'}
+                                onChange={(e) => handleTimeChange(idx, 'morning_end_time', e.target.value)}
+                                className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                              />
+                            </div>
+
+                            {/* Evening Shift */}
+                            <div className="flex items-center gap-1.5 bg-indigo-50/70 dark:bg-indigo-950/30 px-3 py-1.5 rounded-xl border border-indigo-200/70 dark:border-indigo-800/50 shadow-sm">
+                              <Sunset className="w-3.5 h-3.5 text-indigo-500 flex-shrink-0" />
+                              <span className="text-[11px] font-bold text-indigo-800 dark:text-indigo-200">Evening:</span>
+                              <input
+                                type="time"
+                                value={day.evening_start_time || '14:00'}
+                                onChange={(e) => handleTimeChange(idx, 'evening_start_time', e.target.value)}
+                                className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                              />
+                              <span className="text-slate-400 font-medium">to</span>
+                              <input
+                                type="time"
+                                value={day.evening_end_time || '18:00'}
+                                onChange={(e) => handleTimeChange(idx, 'evening_end_time', e.target.value)}
+                                className="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+                              />
+                            </div>
                           </div>
-
-                          <span className="text-slate-400">to</span>
-
-                          {/* End Time */}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-slate-400 font-medium">End:</span>
-                            <input
-                              type="time"
-                              value={day.end_time}
-                              onChange={(e) => handleTimeChange(idx, 'end_time', e.target.value)}
-                              className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm"
-                            />
+                        ) : (
+                          <div className="flex items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                              {shiftType === 'MORNING' ? (
+                                <Sun className="w-3.5 h-3.5 text-amber-500" />
+                              ) : (
+                                <Sunset className="w-3.5 h-3.5 text-indigo-500" />
+                              )}
+                              <span className="text-slate-400 font-medium">Start:</span>
+                              <input
+                                type="time"
+                                value={day.start_time}
+                                onChange={(e) => handleTimeChange(idx, 'start_time', e.target.value)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm"
+                              />
+                              <span className="text-slate-400 font-medium">to</span>
+                              <span className="text-slate-400 font-medium">End:</span>
+                              <input
+                                type="time"
+                                value={day.end_time}
+                                onChange={(e) => handleTimeChange(idx, 'end_time', e.target.value)}
+                                className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#101927] text-xs font-mono text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 shadow-sm"
+                              />
+                            </div>
                           </div>
-
-                        </div>
+                        )
                       ) : (
-                        <div className="py-1 px-3 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-400 text-xs italic font-medium">
+                        <div className="py-1.5 px-3 rounded-lg bg-slate-100 dark:bg-slate-800/80 text-slate-400 text-xs italic font-medium">
                           No consultations scheduled on this day
                         </div>
                       )}
