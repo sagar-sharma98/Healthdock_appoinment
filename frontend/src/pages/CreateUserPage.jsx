@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
@@ -85,7 +86,7 @@ export default function CreateUserPage() {
       try {
         setInitialLoading(true);
         const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/doctor/users/${editUserId}`, {
+        const res = await fetch(`${API_BASE_URL}/api/doctor/users/${editUserId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -185,8 +186,8 @@ export default function CreateUserPage() {
       setLoading(true);
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
       const url = isEditMode
-        ? `http://localhost:5000/api/doctor/users/${editUserId}`
-        : 'http://localhost:5000/api/doctor/users';
+        ? `${API_BASE_URL}/api/doctor/users/${editUserId}`
+        : `${API_BASE_URL}/api/doctor/users`;
 
       const method = isEditMode ? 'PUT' : 'POST';
 

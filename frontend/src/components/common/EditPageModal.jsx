@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { X, FileText, AlertCircle } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
@@ -43,7 +44,7 @@ export default function EditPageModal({
     try {
       setLoading(true);
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/doctor/pages/${page.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/pages/${page.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

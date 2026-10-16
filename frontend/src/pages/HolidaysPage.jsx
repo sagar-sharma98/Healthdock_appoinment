@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -107,7 +108,7 @@ export default function HolidaysPage() {
       if (selectedLeaveStatus && selectedLeaveStatus !== 'ALL') params.append('status', selectedLeaveStatus);
       if (searchQuery.trim()) params.append('search', searchQuery.trim());
 
-      const res = await fetch(`http://localhost:5000/api/holidays/leaves?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/api/holidays/leaves?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -188,7 +189,7 @@ export default function HolidaysPage() {
 
     try {
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/holidays/leaves/${deleteTarget.id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/holidays/leaves/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

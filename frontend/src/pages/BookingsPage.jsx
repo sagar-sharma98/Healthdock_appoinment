@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
@@ -56,7 +57,7 @@ export default function BookingsPage() {
     const token = localStorage.getItem('healthdock_token');
     try {
       if (token) {
-        const res = await fetch('http://localhost:5000/api/doctor/appointments', {
+        const res = await fetch(`${API_BASE_URL}/api/doctor/appointments`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/apiConfig.js';
 import React, { useState } from 'react';
 import { X, Clock, Calendar, Check, AlertCircle } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
@@ -57,7 +58,7 @@ export default function AddScheduleModal({
       
       // Save schedule for each selected day
       const promises = selectedDays.map(day => 
-        fetch('http://localhost:5000/api/doctor/schedules', {
+        fetch(`${API_BASE_URL}/api/doctor/schedules`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

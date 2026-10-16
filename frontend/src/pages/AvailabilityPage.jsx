@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -133,7 +134,7 @@ export default function AvailabilityPage() {
         params.append('organizationId', currentUser.organization_id || currentUser.organizationId);
       }
 
-      const res = await fetch(`http://localhost:5000/api/doctor/availability/overview?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/availability/overview?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -159,7 +160,7 @@ export default function AvailabilityPage() {
         params.append('doctor_id', selectedDoctorId);
       }
 
-      const res = await fetch(`http://localhost:5000/api/doctor/availability/slots?${params.toString()}`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/availability/slots?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
 
@@ -193,7 +194,7 @@ export default function AvailabilityPage() {
     try {
       setTogglingSlot(slot.slot_id);
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/doctor/availability/slots/toggle-block`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/availability/slots/toggle-block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

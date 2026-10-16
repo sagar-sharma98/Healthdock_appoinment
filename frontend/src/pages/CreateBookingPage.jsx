@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -156,7 +157,7 @@ export default function CreateBookingPage() {
           params.append('organizationId', currentUser.organization_id || currentUser.organizationId);
         }
 
-        const res = await fetch(`http://localhost:5000/api/doctor/availability/overview?${params.toString()}`, {
+        const res = await fetch(`${API_BASE_URL}/api/doctor/availability/overview?${params.toString()}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -189,7 +190,7 @@ export default function CreateBookingPage() {
 
         const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
         const res = await fetch(
-          `http://localhost:5000/api/doctor/availability/slots?doctorId=${selectedDoctor.doctor_profile_id}&date=${selectedDate}`,
+          `${API_BASE_URL}/api/doctor/availability/slots?doctorId=${selectedDoctor.doctor_profile_id}&date=${selectedDate}`,
           {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }
@@ -263,7 +264,7 @@ export default function CreateBookingPage() {
       const finalPatientName =
         bookingFor === 'FAMILY_MEMBER' && patientName.trim() ? patientName.trim() : bookerName.trim();
 
-      const res = await fetch('http://localhost:5000/api/doctor/appointments', {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/appointments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

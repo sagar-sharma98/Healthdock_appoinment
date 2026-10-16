@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/apiConfig.js';
 import React, { useState } from 'react';
 import { X, UserPlus, AlertCircle, Mail, Phone, User, Shield, Stethoscope } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
@@ -34,7 +35,7 @@ export default function AddUserModal({
     try {
       setLoading(true);
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/doctor/users', {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

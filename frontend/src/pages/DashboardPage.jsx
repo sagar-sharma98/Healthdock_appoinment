@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -88,7 +89,7 @@ export default function DashboardPage() {
         return;
       }
 
-      const res = await fetch(`http://localhost:5000/api/doctor/dashboard-stats?range=${range}`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/dashboard-stats?range=${range}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

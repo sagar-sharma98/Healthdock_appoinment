@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -205,7 +206,7 @@ export default function AddSchedulePage() {
         })),
       };
 
-      const res = await fetch('http://localhost:5000/api/doctor/schedules', {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/schedules`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

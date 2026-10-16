@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, AlertCircle, Stethoscope, User, Clock, CheckCircle2 } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
@@ -67,8 +68,8 @@ export default function AddDoctorLeaveModal({
       setLoading(true);
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
       const url = isEditing
-        ? `http://localhost:5000/api/holidays/leaves/${initialData.id}`
-        : 'http://localhost:5000/api/holidays/leaves';
+        ? `${API_BASE_URL}/api/holidays/leaves/${initialData.id}`
+        : `${API_BASE_URL}/api/holidays/leaves`;
 
       const method = isEditing ? 'PUT' : 'POST';
 

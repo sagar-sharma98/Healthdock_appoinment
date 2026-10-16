@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { 
@@ -75,7 +76,7 @@ export default function OnboardingCreatePage() {
     if (!domain) return;
     setIsCheckingSlug(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/onboarding/check-slug/${domain}`);
+      const res = await fetch(`${API_BASE_URL}/api/onboarding/check-slug/${domain}`);
       const data = await res.json();
       setSlugStatus(data);
     } catch (err) {
@@ -102,7 +103,7 @@ export default function OnboardingCreatePage() {
     const token = localStorage.getItem('healthdock_token');
 
     try {
-      const res = await fetch('http://localhost:5000/api/onboarding/create-page', {
+      const res = await fetch(`${API_BASE_URL}/api/onboarding/create-page`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

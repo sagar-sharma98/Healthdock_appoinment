@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -143,7 +144,7 @@ export default function PublicBookingPage() {
       try {
         setLoading(true);
         setError('');
-        const res = await fetch(`http://localhost:5000/api/public/booking/${slug}`);
+        const res = await fetch(`${API_BASE_URL}/api/public/booking/${slug}`);
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.error || 'Failed to load booking page');
@@ -172,7 +173,7 @@ export default function PublicBookingPage() {
         setSlotBlockReason('');
         setSelectedSlot(null);
         const res = await fetch(
-          `http://localhost:5000/api/public/booking/${slug}/slots?date=${selectedDate}&shift=${selectedShift}`
+          `${API_BASE_URL}/api/public/booking/${slug}/slots?date=${selectedDate}&shift=${selectedShift}`
         );
         const data = await res.json();
         if (res.ok && data.success) {
@@ -206,7 +207,7 @@ export default function PublicBookingPage() {
     }
     try {
       setOtpSending(true);
-      const res = await fetch('http://localhost:5000/api/public/otp/send', {
+      const res = await fetch(`${API_BASE_URL}/api/public/otp/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: bookerPhone }),
@@ -244,7 +245,7 @@ export default function PublicBookingPage() {
 
     try {
       setOtpVerifying(true);
-      const res = await fetch('http://localhost:5000/api/public/otp/verify', {
+      const res = await fetch(`${API_BASE_URL}/api/public/otp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: bookerPhone, otp: otpCode }),
@@ -285,7 +286,7 @@ export default function PublicBookingPage() {
         comm_prefs: commPrefs,
       };
 
-      const res = await fetch(`http://localhost:5000/api/public/booking/${slug}/confirm`, {
+      const res = await fetch(`${API_BASE_URL}/api/public/booking/${slug}/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -312,7 +313,7 @@ export default function PublicBookingPage() {
     if (!confirmedBooking) return;
     try {
       setUpdatingConsent(true);
-      const res = await fetch(`http://localhost:5000/api/public/appointments/${confirmedBooking.id}/consent-settings`, {
+      const res = await fetch(`${API_BASE_URL}/api/public/appointments/${confirmedBooking.id}/consent-settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -352,7 +353,7 @@ export default function PublicBookingPage() {
     setLiveWhatsappToggle(nextVal);
     try {
       setUpdatingConsent(true);
-      const res = await fetch(`http://localhost:5000/api/public/appointments/${confirmedBooking.id}/consent-settings`, {
+      const res = await fetch(`${API_BASE_URL}/api/public/appointments/${confirmedBooking.id}/consent-settings`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

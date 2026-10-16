@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
@@ -88,7 +89,7 @@ export default function CreateLeavePage() {
       try {
         setFetchingDoctors(true);
         const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-        const res = await fetch('http://localhost:5000/api/holidays/leaves', {
+        const res = await fetch(`${API_BASE_URL}/api/holidays/leaves`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
@@ -194,7 +195,7 @@ export default function CreateLeavePage() {
         reason: reason.trim(),
       };
 
-      const res = await fetch('http://localhost:5000/api/holidays/leaves', {
+      const res = await fetch(`${API_BASE_URL}/api/holidays/leaves`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

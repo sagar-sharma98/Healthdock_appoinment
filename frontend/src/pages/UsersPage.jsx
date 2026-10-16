@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -92,7 +93,7 @@ export default function UsersPage() {
       }
 
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/doctor/users', {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/users`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -152,7 +153,7 @@ export default function UsersPage() {
 
     try {
       const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/doctor/users/${userId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/doctor/users/${userId}`, {
         method: 'DELETE',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

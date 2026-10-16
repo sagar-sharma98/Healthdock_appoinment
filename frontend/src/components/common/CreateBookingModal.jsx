@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../utils/apiConfig.js';
 import React, { useState } from 'react';
 import { X, Calendar, Clock, User, Phone, Mail, FileText, Loader2, Plus, Stethoscope } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -25,7 +26,7 @@ export default function CreateBookingModal({ isOpen, onClose, onBookingCreated }
     const token = localStorage.getItem('healthdock_token');
 
     try {
-      const response = await fetch('http://localhost:5000/api/doctor/appointments', {
+      const response = await fetch(`${API_BASE_URL}/api/doctor/appointments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
