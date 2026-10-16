@@ -54,6 +54,9 @@ export default function OnboardingCreatePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [logoPreview, setLogoPreview] = useState(null);
 
+  const activeTheme = THEMES.find(t => t.name.toLowerCase() === selectedTheme.toLowerCase()) || THEMES[9];
+  const activeColor = activeTheme.color;
+
   // Initial check or load from existing doctor
   useEffect(() => {
     const savedUser = localStorage.getItem('healthdock_user');
@@ -319,17 +322,18 @@ export default function OnboardingCreatePage() {
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-56 overflow-y-auto pr-1">
               {THEMES.map((th) => {
-                const isSelected = selectedTheme === th.name;
+                const isSelected = selectedTheme.toLowerCase() === th.name.toLowerCase();
                 return (
                   <button
                     key={th.id}
                     type="button"
                     onClick={() => setSelectedTheme(th.name)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left text-xs transition-all ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left text-xs transition-all cursor-pointer ${
                       isSelected 
-                        ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-950/30 ring-1 ring-teal-500 font-semibold text-slate-900 dark:text-white' 
+                        ? 'font-bold text-slate-900 dark:text-white shadow-sm ring-2' 
                         : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-[#101927] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
+                    style={isSelected ? { borderColor: th.color, ringColor: th.color, backgroundColor: `${th.color}15` } : {}}
                   >
                     <span 
                       className="w-3.5 h-3.5 rounded-full flex-shrink-0 shadow-inner"
@@ -348,7 +352,8 @@ export default function OnboardingCreatePage() {
               type="button"
               onClick={handleCreatePage}
               disabled={isSubmitting}
-              className="px-6 py-2.5 bg-teal-500 hover:bg-teal-600 text-white text-xs font-serif font-medium rounded-lg shadow-md shadow-teal-500/20 transition-all hover:scale-[1.02]"
+              className="px-6 py-2.5 text-white text-xs font-serif font-medium rounded-lg shadow-md transition-all hover:scale-[1.02] cursor-pointer"
+              style={{ backgroundColor: activeColor, boxShadow: `0 4px 14px ${activeColor}35` }}
             >
               {isSubmitting ? 'Creating Page...' : 'Create Page'}
             </button>
@@ -358,16 +363,34 @@ export default function OnboardingCreatePage() {
         {/* Right Column: Live Preview (Matches Screenshot 1 & 2) */}
         <div className="lg:col-span-5 space-y-3">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-            <span>LIVE PREVIEW</span>
+            <div className="flex items-center gap-2">
+              <span>LIVE PREVIEW</span>
+              <span 
+                className="text-[10px] px-2 py-0.5 rounded-full font-medium transition-all"
+                style={{ backgroundColor: `${activeColor}18`, color: activeColor, border: `1px solid ${activeColor}30` }}
+              >
+                {activeTheme.name}
+              </span>
+            </div>
             <ExternalLink className="w-3.5 h-3.5 text-slate-400 hover:text-teal-500 cursor-pointer transition-colors" />
           </div>
 
           {/* Live Preview Card */}
-          <div className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4">
+          <div 
+            className="bg-white dark:bg-[#0B192C] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-4 transition-all"
+            style={{ borderTop: `4px solid ${activeColor}` }}
+          >
             
             {/* Doctor Avatar & Titles */}
             <div className="space-y-2">
-              <div className="w-12 h-12 rounded-full bg-teal-50 dark:bg-teal-950/60 border border-teal-500/30 flex items-center justify-center font-bold text-teal-600 dark:text-teal-400 text-sm overflow-hidden shadow-sm">
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm overflow-hidden shadow-sm transition-all"
+                style={{
+                  backgroundColor: `${activeColor}15`,
+                  border: `2px solid ${activeColor}`,
+                  color: activeColor,
+                }}
+              >
                 {logoPreview ? (
                   <img src={logoPreview} alt="Logo" className="w-full h-full object-cover" />
                 ) : (
@@ -376,7 +399,10 @@ export default function OnboardingCreatePage() {
               </div>
 
               <div>
-                <p className="text-[11px] text-teal-600 dark:text-teal-400 font-medium lowercase">
+                <p 
+                  className="text-[11px] font-semibold lowercase transition-colors"
+                  style={{ color: activeColor }}
+                >
                   {pageName.toLowerCase()}
                 </p>
                 <h3 className="text-lg font-bold font-serif text-[#0B192C] dark:text-white capitalize">
@@ -391,11 +417,11 @@ export default function OnboardingCreatePage() {
               {/* Time & Timezone Badges */}
               <div className="flex items-center gap-4 text-xs text-slate-600 dark:text-slate-400 pt-1">
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-teal-500" />
+                  <Clock className="w-3.5 h-3.5 transition-colors" style={{ color: activeColor }} />
                   <span>30 min</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-teal-500" />
+                  <Globe className="w-3.5 h-3.5 transition-colors" style={{ color: activeColor }} />
                   <span>Asia / Calcutta</span>
                 </div>
               </div>
@@ -404,9 +430,9 @@ export default function OnboardingCreatePage() {
             {/* Calendar Widget matching Screenshot */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-3">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-800 dark:text-slate-200">
-                <ChevronLeft className="w-4 h-4 text-slate-400 hover:text-teal-500 cursor-pointer" />
-                <span className="font-serif">October 2026</span>
-                <ChevronRight className="w-4 h-4 text-slate-400 hover:text-teal-500 cursor-pointer" />
+                <ChevronLeft className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer" />
+                <span className="font-serif font-semibold" style={{ color: activeColor }}>October 2026</span>
+                <ChevronRight className="w-4 h-4 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer" />
               </div>
 
               {/* Days of week */}
@@ -427,69 +453,60 @@ export default function OnboardingCreatePage() {
                 <span className="text-slate-300 dark:text-slate-600 py-1">28</span>
                 <span className="text-slate-300 dark:text-slate-600 py-1">29</span>
                 <span className="text-slate-300 dark:text-slate-600 py-1">30</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">1</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">2</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">3</span>
 
-                <span className="text-slate-700 dark:text-slate-300 py-1">4</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">5</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">6</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">7</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">8</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">9</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">10</span>
-
-                <span className="text-slate-700 dark:text-slate-300 py-1">11</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">12</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">13</span>
-                
-                {/* Selected active day matching Screenshot with HealthDock Teal */}
-                <button
-                  type="button"
-                  onClick={() => setSelectedDate(14)}
-                  className="py-1 rounded-lg bg-teal-500 text-white font-bold shadow-md shadow-teal-500/30"
-                >
-                  14
-                </button>
-
-                <span className="text-slate-700 dark:text-slate-300 py-1 cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 rounded">15</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1 cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 rounded">16</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1 cursor-pointer hover:bg-teal-50 dark:hover:bg-teal-950/40 rounded">17</span>
-
-                <span className="text-slate-700 dark:text-slate-300 py-1">18</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">19</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">20</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">21</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">22</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">23</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">24</span>
-
-                <span className="text-slate-700 dark:text-slate-300 py-1">25</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">26</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">27</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">28</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">29</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">30</span>
-                <span className="text-slate-700 dark:text-slate-300 py-1">31</span>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => {
+                  const isDaySelected = selectedDate === day;
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => setSelectedDate(day)}
+                      className={`py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        isDaySelected
+                          ? 'text-white font-bold shadow-md'
+                          : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                      }`}
+                      style={
+                        isDaySelected
+                          ? {
+                              backgroundColor: activeColor,
+                              boxShadow: `0 4px 12px ${activeColor}55`,
+                            }
+                          : {}
+                      }
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Bottom CTA Button */}
               <button
                 type="button"
-                className="w-full py-2.5 bg-teal-500 hover:bg-teal-600 text-white font-semibold rounded-xl text-xs shadow-md shadow-teal-500/20 transition-all mt-3 hover:scale-[1.01]"
+                className="w-full py-2.5 text-white font-semibold rounded-xl text-xs transition-all mt-3 hover:scale-[1.01] shadow-md cursor-pointer flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: activeColor,
+                  boxShadow: `0 4px 14px ${activeColor}40`,
+                }}
               >
-                Choose a time
+                <span>Choose a time</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Floating Chat Bubble matching HealthDock Teal */}
+      {/* Floating Chat Bubble matching Active Theme */}
       <div className="fixed bottom-6 right-6 z-40">
         <button 
           type="button"
-          className="w-12 h-12 rounded-full bg-teal-500 hover:bg-teal-600 text-white shadow-xl shadow-teal-500/30 flex items-center justify-center transition-transform hover:scale-105"
+          className="w-12 h-12 rounded-full text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105 cursor-pointer"
+          style={{ 
+            backgroundColor: activeColor, 
+            boxShadow: `0 6px 20px ${activeColor}50` 
+          }}
         >
           <MessageSquare className="w-5 h-5" />
         </button>
