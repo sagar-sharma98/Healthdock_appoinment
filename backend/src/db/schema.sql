@@ -115,7 +115,7 @@ CREATE TABLE doctor_profiles (
 
 CREATE TABLE booking_pages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    doctor_profile_id UUID UNIQUE NOT NULL REFERENCES doctor_profiles(id) ON DELETE CASCADE,
+    doctor_profile_id UUID NOT NULL REFERENCES doctor_profiles(id) ON DELETE CASCADE,
     organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
     page_name VARCHAR(150) NOT NULL,         -- e.g. "sagar sharma"
     slug VARCHAR(100) UNIQUE NOT NULL,        -- e.g. "sagar-sharma"
