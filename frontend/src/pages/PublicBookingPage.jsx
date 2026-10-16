@@ -524,7 +524,7 @@ export default function PublicBookingPage() {
             }`}>
               
               {/* Left Column in Split / Top in Centered */}
-              <div className={isSplitLayout ? 'md:col-span-7 space-y-5' : 'space-y-6'}>
+              <div className={isSplitLayout ? 'md:col-span-5 space-y-5' : 'space-y-6'}>
                 
                 {/* Doctor Picture / Logo with custom logo_shape */}
                 <div className={`flex flex-col ${isSplitLayout ? 'items-start' : 'items-center'} ${page.cover_banner_url ? '-mt-16 sm:-mt-20 relative z-10' : ''}`}>
@@ -583,22 +583,22 @@ export default function PublicBookingPage() {
               </div>
 
               {/* Right Column in Split / Bottom in Centered */}
-              <div className={isSplitLayout ? 'md:col-span-5 space-y-5 md:border-l md:border-slate-200/60 dark:md:border-slate-800/60 md:pl-8' : 'space-y-6'}>
+              <div className={isSplitLayout ? 'md:col-span-7 space-y-5 md:border-l md:border-slate-200/60 dark:md:border-slate-800/60 md:pl-8' : 'space-y-6'}>
                 
                 {/* Quick Consultation highlights */}
                 <div className="grid grid-cols-2 gap-3 text-left">
-                  <div className={`p-3.5 ${getRadiusClass('box')} border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 flex items-center gap-2.5`}>
+                  <div className={`p-3.5 ${getRadiusClass('box')} border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 flex items-center gap-2.5 min-w-0`}>
                     <Clock className="w-4 h-4 flex-shrink-0" style={{ color: pageTheme.primary }} />
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Consultation Fee</span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">₹{doctor.consultation_fee}</span>
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block whitespace-nowrap truncate">Consultation Fee</span>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block whitespace-nowrap">₹{doctor.consultation_fee}</span>
                     </div>
                   </div>
-                  <div className={`p-3.5 ${getRadiusClass('box')} border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 flex items-center gap-2.5`}>
+                  <div className={`p-3.5 ${getRadiusClass('box')} border border-slate-100 dark:border-slate-800 bg-white/70 dark:bg-slate-900/40 flex items-center gap-2.5 min-w-0`}>
                     <ShieldCheck className="w-4 h-4 flex-shrink-0" style={{ color: pageTheme.primary }} />
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Data Protection</span>
-                      <span className="text-xs font-bold text-slate-900 dark:text-white">DPDP 2026 Safe</span>
+                    <div className="min-w-0">
+                      <span className="text-[10px] text-slate-400 block whitespace-nowrap truncate">Data Protection</span>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white block whitespace-nowrap">DPDP 2026 Safe</span>
                     </div>
                   </div>
                 </div>

@@ -555,9 +555,15 @@ export default function CalendarPage() {
                         )}
 
                         {isToday && (
-                          <span className="text-[8px] sm:text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1 sm:px-1.5 py-0.5 rounded">
-                            Today
-                          </span>
+                          <>
+                            <span className="hidden sm:inline-block text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1.5 py-0.5 rounded">
+                              Today
+                            </span>
+                            <span
+                              className="sm:hidden w-2 h-2 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50 flex-shrink-0"
+                              title="Today"
+                            />
+                          </>
                         )}
                         {cellLeaves.length > 0 && (
                           <span
@@ -940,44 +946,6 @@ export default function CalendarPage() {
         )}
       </div>
 
-      {/* Highlights & Upcoming Capabilities */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#101927] border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-500 flex items-center justify-center">
-            <CheckCircle2 className="w-4 h-4" />
-          </div>
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-            Live Token Allocation
-          </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Every booking automatically receives a sequential daily queue token for seamless OPD reception triage.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#101927] border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center">
-            <Share2 className="w-4 h-4" />
-          </div>
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-            Shift Schedule Synchronization
-          </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Doctor availability duty shifts and approved leaves are automatically respected across all calendar views.
-          </p>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#101927] border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-          <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center">
-            <Bell className="w-4 h-4" />
-          </div>
-          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-            Realtime OPD Queue Status
-          </h4>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-            Instantly view which patient is currently in consultation and who is waiting in the clinic lounge.
-          </p>
-        </div>
-      </div>
 
       {/* Appointment Details Modal */}
       {activeAppointmentModal && (

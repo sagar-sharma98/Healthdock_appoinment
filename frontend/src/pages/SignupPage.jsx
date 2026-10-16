@@ -2,7 +2,6 @@ import { API_BASE_URL } from '../utils/apiConfig.js';
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
-import GoogleButton from '../components/auth/GoogleButton';
 import { User, Mail, Phone, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
@@ -76,9 +75,6 @@ export default function SignupPage() {
     }
   };
 
-  const handleGoogleSignup = () => {
-    triggerToast('Google Account Connected', 'Google authentication successful.', 'success');
-  };
 
   return (
     <AuthLayout>
@@ -89,20 +85,6 @@ export default function SignupPage() {
           <h2 className="text-xl font-bold text-[#0B192C] dark:text-white tracking-tight">
             Create an account
           </h2>
-        </div>
-
-        {/* Continue with Google */}
-        <GoogleButton 
-          onClick={handleGoogleSignup} 
-          label="Sign Up with Google" 
-        />
-
-        {/* Divider (Centered in Middle) */}
-        <div className="relative flex items-center justify-center my-2">
-          <div className="w-full border-t border-slate-200 dark:border-slate-800 absolute" />
-          <span className="bg-slate-50 dark:bg-[#071224] px-3 text-[11px] font-medium text-slate-400 uppercase tracking-wider relative">
-            Or continue with
-          </span>
         </div>
 
         {/* Signup Form */}
