@@ -360,7 +360,7 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 w-full">
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
@@ -518,7 +518,7 @@ export default function CalendarPage() {
                   <div
                     key={cell.dateStr}
                     onClick={() => handleDayCellClick(cell.dateStr, cell.date)}
-                    className={`min-h-[85px] sm:min-h-[105px] md:min-h-[115px] p-1.5 sm:p-2 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
+                    className={`min-h-[52px] sm:min-h-[105px] md:min-h-[115px] p-1 sm:p-2 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
                       !cell.isCurrentMonth
                         ? 'opacity-40 bg-slate-50/30 dark:bg-slate-900/10 border-slate-200/40 dark:border-slate-800/40'
                         : isSelected
@@ -542,11 +542,12 @@ export default function CalendarPage() {
                         {cell.dayNumber}
                       </span>
 
-                      <div className="flex items-center gap-1">
+                      {/* Desktop Only Badges */}
+                      <div className="hidden sm:flex items-center gap-1">
                         {/* Prominent Total Count Badge */}
                         {cellAppointments.length > 0 && (
                           <span
-                            className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
                             title={`${cellAppointments.length} total bookings (${morningCount} Morning, ${eveningCount} Evening)`}
                           >
                             <Users className="w-2.5 h-2.5" />
@@ -555,19 +556,13 @@ export default function CalendarPage() {
                         )}
 
                         {isToday && (
-                          <>
-                            <span className="hidden sm:inline-block text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1.5 py-0.5 rounded">
-                              Today
-                            </span>
-                            <span
-                              className="sm:hidden w-2 h-2 rounded-full bg-teal-500 shadow-sm shadow-teal-500/50 flex-shrink-0"
-                              title="Today"
-                            />
-                          </>
+                          <span className="text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1.5 py-0.5 rounded">
+                            Today
+                          </span>
                         )}
                         {cellLeaves.length > 0 && (
                           <span
-                            className="text-[8px] sm:text-[9px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded truncate max-w-[42px] sm:max-w-[50px]"
+                            className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded truncate max-w-[50px]"
                             title={`Doctor on Leave: ${cellLeaves[0].leave_type || 'Leave'}`}
                           >
                             Leave
@@ -576,13 +571,21 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
-                    {/* Middle / Bottom: Morning & Evening Shift Counts ONLY */}
-                    <div className="space-y-1 mt-1 sm:mt-1.5 flex-1 flex flex-col justify-end">
+                    {/* Mobile Only: Just dots for active bookings / today / leave, NO text */}
+                    <div className="sm:hidden flex items-center justify-center gap-1 mt-auto pb-0.5">
+                      {isToday && <span className="w-1.5 h-1.5 rounded-full bg-teal-500" title="Today" />}
+                      {morningCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title={`${morningCount} Morning`} />}
+                      {eveningCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" title={`${eveningCount} Evening`} />}
+                      {cellLeaves.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" title="Doctor Leave" />}
+                    </div>
+
+                    {/* Desktop Only: Morning & Evening Shift Counts */}
+                    <div className="hidden sm:flex flex-col space-y-1 mt-1 sm:mt-1.5 flex-1 justify-end">
                       {cellAppointments.length > 0 ? (
                         <>
                           {/* Morning Count */}
                           <div
-                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border text-[9px] sm:text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                            className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center justify-between transition-colors ${
                               morningCount > 0
                                 ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/25'
                                 : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
@@ -591,8 +594,7 @@ export default function CalendarPage() {
                           >
                             <span className="flex items-center gap-1 truncate">
                               <span>🌅</span>
-                              <span className="hidden sm:inline">Morning:</span>
-                              <span className="sm:hidden">M:</span>
+                              <span>Morning:</span>
                             </span>
                             <span className={`font-bold ${morningCount > 0 ? 'text-amber-800 dark:text-amber-200' : 'text-slate-400'}`}>
                               {morningCount}
@@ -601,7 +603,7 @@ export default function CalendarPage() {
 
                           {/* Evening Count */}
                           <div
-                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border text-[9px] sm:text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                            className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center justify-between transition-colors ${
                               eveningCount > 0
                                 ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-500/25'
                                 : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
@@ -610,8 +612,7 @@ export default function CalendarPage() {
                           >
                             <span className="flex items-center gap-1 truncate">
                               <span>🌆</span>
-                              <span className="hidden sm:inline">Evening:</span>
-                              <span className="sm:hidden">E:</span>
+                              <span>Evening:</span>
                             </span>
                             <span className={`font-bold ${eveningCount > 0 ? 'text-indigo-800 dark:text-indigo-200' : 'text-slate-400'}`}>
                               {eveningCount}
@@ -619,7 +620,7 @@ export default function CalendarPage() {
                           </div>
                         </>
                       ) : cell.isCurrentMonth && cellSchedules.length > 0 ? (
-                        <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate mt-auto">
+                        <div className="text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate mt-auto">
                           {cellSchedules.map((s) => s.shift_type).join(' & ')}
                         </div>
                       ) : null}
@@ -859,21 +860,35 @@ export default function CalendarPage() {
         )}
 
         {/* =========================================================================
-            VIEW MODE 3: WEEK VIEW
+            VIEW MODE 3: WEEK VIEW (FULL WIDTH WITH SHIFT COUNTS LIKE MONTH)
            ========================================================================= */}
         {viewMode === 'Week' && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
+          <div className="space-y-3 w-full">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2 md:gap-3 w-full">
               {weekDays.map((day) => {
                 const dayApts = appointmentsByDate[day.dateStr] || [];
                 const dayLeaves = leavesByDate[day.dateStr] || [];
                 const isSelected = day.dateStr === selectedDateStr;
 
+                const morningCount = dayApts.filter((apt) => {
+                  if (apt.shift_type === 'MORNING') return true;
+                  if (apt.shift_type === 'EVENING') return false;
+                  const hour = parseInt((apt.start_time || '10:00:00').split(':')[0], 10);
+                  return hour < 14;
+                }).length;
+
+                const eveningCount = dayApts.filter((apt) => {
+                  if (apt.shift_type === 'EVENING') return true;
+                  if (apt.shift_type === 'MORNING') return false;
+                  const hour = parseInt((apt.start_time || '10:00:00').split(':')[0], 10);
+                  return hour >= 14;
+                }).length;
+
                 return (
                   <div
                     key={day.dateStr}
                     onClick={() => handleDayCellClick(day.dateStr, day.date)}
-                    className={`p-3 rounded-xl border min-h-[160px] flex flex-col justify-between cursor-pointer transition-all ${
+                    className={`p-1.5 sm:p-3 rounded-xl border min-h-[55px] sm:min-h-[140px] flex flex-col justify-between cursor-pointer transition-all ${
                       isSelected
                         ? 'border-teal-500 bg-teal-50/50 dark:bg-teal-500/15 ring-2 ring-teal-500/30'
                         : day.isToday
@@ -882,48 +897,89 @@ export default function CalendarPage() {
                     }`}
                   >
                     <div>
-                      <div className="flex items-center justify-between pb-2 border-b border-slate-200/60 dark:border-slate-800">
+                      {/* Top Row */}
+                      <div className="flex items-center justify-between pb-1 sm:pb-2 border-b border-slate-200/60 dark:border-slate-800">
                         <div>
-                          <div className="text-[11px] font-semibold text-slate-400 uppercase">
-                            {day.dayName}
+                          <div className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase">
+                            <span className="sm:hidden">{day.dayName.charAt(0)}</span>
+                            <span className="hidden sm:inline">{day.dayName}</span>
                           </div>
-                          <div className="text-base font-bold text-slate-900 dark:text-white">
+                          <div className="text-xs sm:text-base font-bold text-slate-900 dark:text-white">
                             {day.dayNumber}
                           </div>
                         </div>
-                        {day.isToday && (
-                          <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
-                            Today
-                          </span>
-                        )}
+
+                        {/* Desktop Badges */}
+                        <div className="hidden sm:flex items-center gap-1">
+                          {dayApts.length > 0 && (
+                            <span
+                              className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
+                              title={`${dayApts.length} bookings`}
+                            >
+                              <Users className="w-2.5 h-2.5" />
+                              <span>{dayApts.length}</span>
+                            </span>
+                          )}
+                          {day.isToday && (
+                            <span className="text-[9px] font-bold text-teal-600 dark:text-teal-400 bg-teal-500/10 px-1.5 py-0.5 rounded">
+                              Today
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Leaves */}
-                      {dayLeaves.length > 0 && (
-                        <div className="mt-2 text-[9px] font-bold text-rose-600 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded">
-                          Doctor on Leave
-                        </div>
-                      )}
+                      {/* Mobile Only: Dots under date */}
+                      <div className="sm:hidden flex items-center justify-center gap-1 mt-1">
+                        {day.isToday && <span className="w-1.5 h-1.5 rounded-full bg-teal-500" title="Today" />}
+                        {morningCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title={`${morningCount} Morning`} />}
+                        {eveningCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" title={`${eveningCount} Evening`} />}
+                        {dayLeaves.length > 0 && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" title="Leave" />}
+                      </div>
 
-                      {/* Appointments */}
-                      <div className="space-y-1.5 mt-2.5">
-                        {dayApts.map((apt) => (
-                          <div
-                            key={apt.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveAppointmentModal(apt);
-                            }}
-                            className={`p-1.5 rounded-lg border text-[10px] font-medium truncate ${getStatusColor(
-                              apt.status
-                            )}`}
-                          >
-                            <div className="font-bold truncate">#{apt.daily_token || '1'} {apt.patient_name}</div>
-                            <div className="text-[9px] font-mono opacity-80">{formatTimeDisplay(apt.start_time)}</div>
+                      {/* Desktop Only: Shift Counts like Month Layout */}
+                      <div className="hidden sm:block space-y-1.5 mt-2.5">
+                        {dayLeaves.length > 0 && (
+                          <div className="text-[9px] font-bold text-rose-600 bg-rose-500/15 border border-rose-500/30 px-1.5 py-0.5 rounded truncate">
+                            Doctor on Leave
                           </div>
-                        ))}
-                        {dayApts.length === 0 && (
-                          <div className="text-[10px] text-slate-400 italic pt-2">No visits</div>
+                        )}
+
+                        {dayApts.length > 0 ? (
+                          <>
+                            <div
+                              className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                                morningCount > 0
+                                  ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/25'
+                                  : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1 truncate">
+                                <span>🌅</span>
+                                <span>Morning:</span>
+                              </span>
+                              <span className={`font-bold ${morningCount > 0 ? 'text-amber-800 dark:text-amber-200' : 'text-slate-400'}`}>
+                                {morningCount}
+                              </span>
+                            </div>
+
+                            <div
+                              className={`px-2 py-1 rounded-lg border text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                                eveningCount > 0
+                                  ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-500/25'
+                                  : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
+                              }`}
+                            >
+                              <span className="flex items-center gap-1 truncate">
+                                <span>🌆</span>
+                                <span>Evening:</span>
+                              </span>
+                              <span className={`font-bold ${eveningCount > 0 ? 'text-indigo-800 dark:text-indigo-200' : 'text-slate-400'}`}>
+                                {eveningCount}
+                              </span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-[10px] text-slate-400 italic pt-1">No visits</div>
                         )}
                       </div>
                     </div>
@@ -934,7 +990,7 @@ export default function CalendarPage() {
                         e.stopPropagation();
                         handleDayCellClick(day.dateStr, day.date);
                       }}
-                      className="text-[10px] font-semibold text-teal-600 dark:text-teal-400 pt-2 text-right hover:underline"
+                      className="hidden sm:block text-[10px] font-semibold text-teal-600 dark:text-teal-400 pt-2 text-right hover:underline"
                     >
                       View Day →
                     </button>
