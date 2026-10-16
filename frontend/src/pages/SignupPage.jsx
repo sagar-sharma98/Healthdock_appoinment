@@ -1,5 +1,5 @@
 import { API_BASE_URL } from '../utils/apiConfig.js';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/auth/AuthLayout';
 import { User, Mail, Phone, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
@@ -8,6 +8,13 @@ import { useApp } from '../context/AppContext';
 export default function SignupPage() {
   const navigate = useNavigate();
   const { setDoctor, triggerToast } = useApp();
+
+  useEffect(() => {
+    const token = localStorage.getItem('healthdock_token') || localStorage.getItem('token');
+    if (token) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [navigate]);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

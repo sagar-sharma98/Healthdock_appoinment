@@ -250,13 +250,48 @@ router.post('/login', async (req, res) => {
       `SELECT * FROM doctor_profiles WHERE user_id = $1 LIMIT 1`,
       [user.id]
     );
-    const doctorProfile = docRes.rows[0] || null;
+    let doctorProfile = docRes.rows[0] || null;
+    let organizationId = doctorProfile?.organization_id || null;
+    let userRole = 'DOCTOR';
+
+    // Fetch organization and role if not a direct doctor profile
+    const memberRes = await query(
+      `SELECT om.organization_id, r.name as role_name 
+       FROM organization_members om
+       LEFT JOIN roles r ON om.role_id = r.id
+       WHERE om.user_id = $1 LIMIT 1`,
+      [user.id]
+    );
+    if (memberRes.rowCount > 0) {
+      organizationId = memberRes.rows[0].organization_id || organizationId;
+      userRole = memberRes.rows[0].role_name || userRole;
+    }
+
+    // If receptionist or staff, find the organization's primary doctor profile
+    if (!doctorProfile && organizationId) {
+      const orgDoc = await query(
+        `SELECT * FROM doctor_profiles WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1`,
+        [organizationId]
+      );
+      if (orgDoc.rowCount > 0) {
+        doctorProfile = orgDoc.rows[0];
+      }
+    }
+
+    // Global fallback if no doctor profile found yet
+    if (!doctorProfile) {
+      const fallbackDoc = await query(`SELECT * FROM doctor_profiles ORDER BY created_at ASC LIMIT 1`);
+      if (fallbackDoc.rowCount > 0) {
+        doctorProfile = fallbackDoc.rows[0];
+        if (!organizationId) organizationId = doctorProfile.organization_id;
+      }
+    }
 
     let bookingPage = null;
     if (doctorProfile) {
       const pageRes = await query(
-        `SELECT * FROM booking_pages WHERE doctor_profile_id = $1 LIMIT 1`,
-        [doctorProfile.id]
+        `SELECT * FROM booking_pages WHERE doctor_profile_id = $1 OR organization_id = $2 ORDER BY created_at ASC LIMIT 1`,
+        [doctorProfile.id, organizationId]
       );
       bookingPage = pageRes.rows[0] || null;
     }
@@ -266,9 +301,10 @@ router.post('/login', async (req, res) => {
         userId: user.id,
         email: user.email,
         fullName: user.full_name,
-        doctorProfileId: doctorProfile?.id,
-        organizationId: doctorProfile?.organization_id,
-        bookingSlug: bookingPage?.slug,
+        doctorProfileId: doctorProfile?.id || null,
+        organizationId: organizationId || doctorProfile?.organization_id || null,
+        bookingSlug: bookingPage?.slug || 'doctor',
+        role: userRole,
       },
       JWT_SECRET,
       { expiresIn: '7d' }
@@ -282,6 +318,7 @@ router.post('/login', async (req, res) => {
         full_name: user.full_name,
         email: user.email,
         phone: user.phone,
+        role: userRole,
       },
       doctorProfile,
       bookingPage,

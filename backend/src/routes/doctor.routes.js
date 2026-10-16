@@ -16,22 +16,81 @@ function formatHourLabel(h) {
   return `${hour} AM`;
 }
 
-// Get Comprehensive Live Dashboard Analytics for current doctor
+// Helper to resolve doctorProfileId and organizationId for any user (Doctor, Receptionist, Staff)
+async function resolveDoctorAndOrg(user) {
+  let doctorProfileId = user?.doctorProfileId;
+  let organizationId = user?.organizationId;
+
+  // 1. Check direct doctor profile
+  if (!doctorProfileId && user?.userId) {
+    const docLookup = await query(
+      `SELECT id, organization_id FROM doctor_profiles WHERE user_id = $1 LIMIT 1`,
+      [user.userId]
+    );
+    if (docLookup.rowCount > 0) {
+      doctorProfileId = docLookup.rows[0].id;
+      organizationId = organizationId || docLookup.rows[0].organization_id;
+    }
+  }
+
+  // 2. If receptionist or staff, check organization_members
+  if (!organizationId && user?.userId) {
+    const orgMember = await query(
+      `SELECT organization_id FROM organization_members WHERE user_id = $1 LIMIT 1`,
+      [user.userId]
+    );
+    if (orgMember.rowCount > 0) {
+      organizationId = orgMember.rows[0].organization_id;
+    }
+  }
+
+  // 3. Find primary doctor profile for this organization
+  if (!doctorProfileId && organizationId) {
+    const orgDoc = await query(
+      `SELECT id FROM doctor_profiles WHERE organization_id = $1 ORDER BY created_at ASC LIMIT 1`,
+      [organizationId]
+    );
+    if (orgDoc.rowCount > 0) {
+      doctorProfileId = orgDoc.rows[0].id;
+    }
+  }
+
+  // 4. Global fallback to any active doctor profile in system
+  if (!doctorProfileId) {
+    const anyDoc = await query(`SELECT id, organization_id FROM doctor_profiles ORDER BY created_at ASC LIMIT 1`);
+    if (anyDoc.rowCount > 0) {
+      doctorProfileId = anyDoc.rows[0].id;
+      organizationId = organizationId || anyDoc.rows[0].organization_id;
+    }
+  }
+
+  return { doctorProfileId, organizationId };
+}
+
+// Get Comprehensive Live Dashboard Analytics for current doctor or receptionist's clinic
 router.get('/dashboard-stats', authenticateToken, async (req, res) => {
   try {
-    let doctorProfileId = req.user.doctorProfileId;
-    if (!doctorProfileId) {
-      const docLookup = await query(
-        `SELECT id FROM doctor_profiles WHERE user_id = $1 LIMIT 1`,
-        [req.user.userId]
-      );
-      if (docLookup.rowCount > 0) {
-        doctorProfileId = docLookup.rows[0].id;
-      }
-    }
+    const { doctorProfileId, organizationId } = await resolveDoctorAndOrg(req.user);
 
-    if (!doctorProfileId) {
-      return res.status(404).json({ error: 'Doctor profile not found' });
+    // If completely empty system, return 0 values safely
+    if (!doctorProfileId && !organizationId) {
+      return res.json({
+        success: true,
+        stats: {
+          totalBookings: 0,
+          cancellations: 0,
+          reschedules: 0,
+          todayBookings: 0,
+          completedBookings: 0,
+          totalRevenue: 0,
+          totalVisits: 0,
+          uniqueVisitors: 0,
+        },
+        dailyTrend: [],
+        hourlyDistribution: [],
+        consultationModes: { inPerson: 0, video: 0, inPersonPercent: 0, videoPercent: 0 },
+        recentAppointments: [],
+      });
     }
 
     // 1. Overall KPI Stats
@@ -44,8 +103,8 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
          COUNT(*) FILTER (WHERE status = 'COMPLETED')::int as completed_bookings,
          COALESCE(SUM(consultation_fee) FILTER (WHERE status != 'CANCELLED'), 0)::numeric as total_revenue
        FROM appointments 
-       WHERE doctor_profile_id = $1`,
-      [doctorProfileId]
+       WHERE (doctor_profile_id = $1 OR organization_id = $2)`,
+      [doctorProfileId, organizationId]
     );
 
     // 2. Page Traffic Analytics
@@ -55,8 +114,8 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
          COALESCE(SUM(unique_visitors), 0)::int as unique_visitors
        FROM page_daily_analytics pda
        JOIN booking_pages bp ON bp.id = pda.booking_page_id
-       WHERE bp.doctor_profile_id = $1`,
-      [doctorProfileId]
+       WHERE (bp.doctor_profile_id = $1 OR bp.organization_id = $2)`,
+      [doctorProfileId, organizationId]
     );
 
     // 3. Real Daily Trend for Area Chart
@@ -78,12 +137,12 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
          TO_CHAR(appointment_date, 'YYYY-MM-DD') as date_str,
          COUNT(*)::int as count
        FROM appointments
-       WHERE doctor_profile_id = $1 
-         AND appointment_date >= $2
+       WHERE (doctor_profile_id = $1 OR organization_id = $2)
+         AND appointment_date >= $3
          AND status != 'CANCELLED'
        GROUP BY appointment_date
        ORDER BY appointment_date ASC`,
-      [doctorProfileId, startDateStr]
+      [doctorProfileId, organizationId, startDateStr]
     );
 
     trendRes.rows.forEach(r => {
@@ -112,9 +171,9 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
          EXTRACT(HOUR FROM start_time)::int as hour_val,
          COUNT(*)::int as count
        FROM appointments
-       WHERE doctor_profile_id = $1 AND status != 'CANCELLED'
+       WHERE (doctor_profile_id = $1 OR organization_id = $2) AND status != 'CANCELLED'
        GROUP BY EXTRACT(HOUR FROM start_time)`,
-      [doctorProfileId]
+      [doctorProfileId, organizationId]
     );
 
     hourlyRes.rows.forEach(r => {
@@ -135,9 +194,9 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
          COALESCE(consultation_mode, 'IN_PERSON') as mode,
          COUNT(*)::int as count
        FROM appointments
-       WHERE doctor_profile_id = $1 AND status != 'CANCELLED'
+       WHERE (doctor_profile_id = $1 OR organization_id = $2) AND status != 'CANCELLED'
        GROUP BY COALESCE(consultation_mode, 'IN_PERSON')`,
-      [doctorProfileId]
+      [doctorProfileId, organizationId]
     );
 
     let inPersonCount = 0;
@@ -174,10 +233,10 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
        FROM appointments a
        JOIN patients p ON a.patient_id = p.id
        LEFT JOIN services s ON a.service_id = s.id
-       WHERE a.doctor_profile_id = $1
+       WHERE (a.doctor_profile_id = $1 OR a.organization_id = $2)
        ORDER BY a.appointment_date DESC, a.start_time DESC
        LIMIT 6`,
-      [doctorProfileId]
+      [doctorProfileId, organizationId]
     );
 
     const stats = statsRes.rows[0] || {};
@@ -206,18 +265,20 @@ router.get('/dashboard-stats', authenticateToken, async (req, res) => {
   }
 });
 
-// Get Doctor's Appointments
+// Get Doctor's or Clinic's Appointments
 router.get('/appointments', authenticateToken, async (req, res) => {
   try {
+    const { doctorProfileId, organizationId } = await resolveDoctorAndOrg(req.user);
+
     const appointmentsRes = await query(
       `SELECT a.*, p.full_name as patient_name, p.phone as patient_phone, p.email as patient_email,
               s.name as service_name
        FROM appointments a
        JOIN patients p ON a.patient_id = p.id
        LEFT JOIN services s ON a.service_id = s.id
-       WHERE a.doctor_profile_id = $1
+       WHERE (a.doctor_profile_id = $1 OR a.organization_id = $2)
        ORDER BY a.appointment_date DESC, a.start_time DESC`,
-      [req.user.doctorProfileId]
+      [doctorProfileId, organizationId]
     );
 
     return res.json({ appointments: appointmentsRes.rows });
@@ -370,8 +431,7 @@ router.post('/appointments', authenticateToken, async (req, res) => {
 router.get('/schedules', authenticateToken, async (req, res) => {
   try {
     const { scope = 'my', shift } = req.query;
-    const doctorProfileId = req.user.doctorProfileId;
-    const organizationId = req.user.organizationId;
+    const { doctorProfileId, organizationId } = await resolveDoctorAndOrg(req.user);
 
     let schedulesQuery = `
       SELECT s.*, 
@@ -389,9 +449,9 @@ router.get('/schedules', authenticateToken, async (req, res) => {
       JOIN doctor_profiles dp ON dp.id = s.doctor_profile_id
       JOIN users u ON u.id = dp.user_id
       LEFT JOIN schedule_time_blocks tb ON tb.schedule_id = s.id
-      WHERE ${scope === 'all' ? 'dp.organization_id = $1' : 's.doctor_profile_id = $1'}
+      WHERE (s.doctor_profile_id = $1 OR dp.organization_id = $2)
     `;
-    const params = [scope === 'all' ? organizationId : doctorProfileId];
+    const params = [doctorProfileId, organizationId];
 
     if (shift) {
       schedulesQuery += ` AND s.shift_type = $2`;
@@ -1094,20 +1154,12 @@ router.post('/users', authenticateToken, async (req, res) => {
     );
     let roleId = roleRes.rows[0]?.id;
     if (!roleId) {
-      const anyRole = await query(
-        `SELECT id FROM roles WHERE organization_id = $1 LIMIT 1`,
-        [organizationId]
+      const newRole = await query(
+        `INSERT INTO roles (organization_id, name, is_system_role)
+         VALUES ($1, $2, true) RETURNING id`,
+        [organizationId, role]
       );
-      if (anyRole.rowCount > 0) {
-        roleId = anyRole.rows[0].id;
-      } else {
-        const newRole = await query(
-          `INSERT INTO roles (organization_id, name, is_system_role)
-           VALUES ($1, $2, true) RETURNING id`,
-          [organizationId, role]
-        );
-        roleId = newRole.rows[0].id;
-      }
+      roleId = newRole.rows[0].id;
     }
 
     await query(
@@ -1214,6 +1266,33 @@ router.put('/users/:id', authenticateToken, async (req, res) => {
         `UPDATE organization_members SET status = $1 WHERE user_id = $2`,
         [status, id]
       );
+    }
+
+    if (role) {
+      let organizationId = req.user.organizationId;
+      if (!organizationId) {
+        const orgQ = await query(`SELECT organization_id FROM organization_members WHERE user_id = $1 LIMIT 1`, [id]);
+        if (orgQ.rowCount > 0) organizationId = orgQ.rows[0].organization_id;
+      }
+      if (organizationId) {
+        let roleRes = await query(
+          `SELECT id FROM roles WHERE organization_id = $1 AND name = $2 LIMIT 1`,
+          [organizationId, role]
+        );
+        let roleId = roleRes.rows[0]?.id;
+        if (!roleId) {
+          const newRole = await query(
+            `INSERT INTO roles (organization_id, name, is_system_role)
+             VALUES ($1, $2, true) RETURNING id`,
+            [organizationId, role]
+          );
+          roleId = newRole.rows[0].id;
+        }
+        await query(
+          `UPDATE organization_members SET role_id = $1 WHERE user_id = $2`,
+          [roleId, id]
+        );
+      }
     }
 
     if (specialty) {

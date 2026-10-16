@@ -22,7 +22,7 @@ export default function DashboardLayout() {
             <Menu className="w-5 h-5" />
           </button>
 
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-teal-500 flex items-center justify-center text-white shadow-sm">
               <Cross className="w-3.5 h-3.5 stroke-[2.8]" />
             </div>

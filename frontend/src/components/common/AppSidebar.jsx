@@ -151,7 +151,7 @@ export default function AppSidebar({ isMobile = false, isMobileOpen = false, onM
         {/* Logo Header */}
         <div className="p-4 flex items-center justify-between border-b border-slate-800/80">
           <Link
-            to="/"
+            to="/dashboard"
             onClick={() => {
               if (isMobile && onMobileClose) onMobileClose();
             }}
