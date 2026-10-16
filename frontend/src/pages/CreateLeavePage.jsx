@@ -29,7 +29,6 @@ import CustomDropdown from '../components/common/CustomDropdown';
 
 export default function CreateLeavePage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   // Form Fields - All initialized completely EMPTY on render
   const [selectedDoctorId, setSelectedDoctorId] = useState('');
@@ -52,20 +51,6 @@ export default function CreateLeavePage() {
     name: 'Dr. Sagar Sharma',
     email: 'dr.sagar@healthdock.in',
   });
-
-  // Dark mode synchronization matching HolidaysPage
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   useEffect(() => {
     const savedUser = localStorage.getItem('healthdock_user') || localStorage.getItem('user');

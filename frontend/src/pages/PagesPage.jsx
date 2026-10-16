@@ -36,7 +36,6 @@ import QrCodeModal from '../components/common/QrCodeModal';
 
 export default function PagesPage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [searchQuery, setSearchQuery] = useState('');
   const [doctorFilter, setDoctorFilter] = useState('ALL');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -53,20 +52,6 @@ export default function PagesPage() {
     email: 'dr.sagar@healthdock.in',
     organization: 'HealthDock Clinic',
   });
-
-  // Dark mode synchronization
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   // Close three-dot menu when clicking outside
   useEffect(() => {

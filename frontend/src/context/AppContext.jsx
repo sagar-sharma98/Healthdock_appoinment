@@ -17,7 +17,9 @@ export function AppProvider({ children }) {
   const [dashboardTab, setDashboardTab] = useState('appointments');
 
   // Theme: 'light' | 'dark'
-  const [theme, setTheme] = useState('light');
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('healthdock_theme') || 'light';
+  });
 
   // Doctor / Organization state
   const [doctor, setDoctor] = useState(INITIAL_DOCTOR);
@@ -41,6 +43,8 @@ export function AppProvider({ children }) {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.classList.toggle('dark', isDark);
     document.body.classList.toggle('dark', isDark);
+    localStorage.setItem('healthdock_theme', theme);
+    localStorage.removeItem('theme'); // Clean up any old fragmented keys
   }, [theme]);
 
   const toggleTheme = () => {

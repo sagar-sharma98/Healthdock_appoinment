@@ -34,7 +34,6 @@ import CustomDropdown from '../components/common/CustomDropdown';
 
 export default function HolidaysPage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -68,20 +67,6 @@ export default function HolidaysPage() {
     email: 'dr.sagar@healthdock.in',
     organization: 'HealthDock Clinic',
   });
-
-  // Dark mode synchronization
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   // Load User profile
   useEffect(() => {

@@ -38,7 +38,6 @@ import CustomDropdown from '../components/common/CustomDropdown';
 
 export default function UsersPage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -53,20 +52,6 @@ export default function UsersPage() {
     email: 'dr.sagar@healthdock.in',
     organization: 'HealthDock Clinic',
   });
-
-  // Dark mode synchronization
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   // Close three-dot menu on click outside
   useEffect(() => {

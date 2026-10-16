@@ -37,14 +37,22 @@ import { getTheme } from '../utils/themeConstants';
 export default function PublicBookingPage() {
   const { slug } = useParams();
 
-  // Dark mode
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
+  // Dark mode for patient booking page
+  const [theme, setTheme] = useState('light');
   useEffect(() => {
     const isDark = theme === 'dark';
     document.documentElement.classList.toggle('dark', isDark);
     document.documentElement.setAttribute('data-theme', theme);
     document.body.classList.toggle('dark', isDark);
-    localStorage.setItem('theme', theme);
+
+    return () => {
+      // Restore dashboard theme when leaving public booking page
+      const savedTheme = localStorage.getItem('healthdock_theme') || 'light';
+      const shouldBeDark = savedTheme === 'dark';
+      document.documentElement.classList.toggle('dark', shouldBeDark);
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      document.body.classList.toggle('dark', shouldBeDark);
+    };
   }, [theme]);
 
   // Page data & loading state

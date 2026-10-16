@@ -40,7 +40,6 @@ const WEEKDAYS = [
 
 export default function AddSchedulePage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
 
   // Top Configuration Dropdowns
   const [shiftType, setShiftType] = useState('MORNING'); // 'MORNING' | 'EVENING'
@@ -68,20 +67,6 @@ export default function AddSchedulePage() {
     name: 'Dr. Sagar Sharma',
     email: 'dr.sagar@healthdock.in',
   });
-
-  // Dark mode
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   useEffect(() => {
     const userStr = localStorage.getItem('healthdock_user') || localStorage.getItem('user');

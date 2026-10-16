@@ -49,7 +49,6 @@ function format12Hour(timeStr) {
 
 export default function AvailabilityPage() {
   const navigate = useNavigate();
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   
   // Switch tab: 'all' (All Doctors Table) or 'my' (My Schedule Slot Matrix)
   const [activeTab, setActiveTab] = useState('all');
@@ -81,20 +80,6 @@ export default function AvailabilityPage() {
     email: 'dr.sagar@healthdock.in',
     doctorProfileId: null,
   });
-
-  // Theme synchronization
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
 
   // Load User Profile
   useEffect(() => {
