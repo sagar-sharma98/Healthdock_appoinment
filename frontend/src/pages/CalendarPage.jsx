@@ -490,7 +490,7 @@ export default function CalendarPage() {
             </div>
 
             {/* Calendar Grid */}
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {monthDays.map((cell) => {
                 const isToday = cell.dateStr === getISODateStr(new Date());
                 const isSelected = cell.dateStr === selectedDateStr;
@@ -499,11 +499,26 @@ export default function CalendarPage() {
                 const cellDayOfWeek = cell.date.getDay();
                 const cellSchedules = schedulesByDay[cellDayOfWeek] || [];
 
+                // Separate Morning vs Evening counts
+                const morningCount = cellAppointments.filter((apt) => {
+                  if (apt.shift_type === 'MORNING') return true;
+                  if (apt.shift_type === 'EVENING') return false;
+                  const hour = parseInt((apt.start_time || '10:00:00').split(':')[0], 10);
+                  return hour < 14;
+                }).length;
+
+                const eveningCount = cellAppointments.filter((apt) => {
+                  if (apt.shift_type === 'EVENING') return true;
+                  if (apt.shift_type === 'MORNING') return false;
+                  const hour = parseInt((apt.start_time || '10:00:00').split(':')[0], 10);
+                  return hour >= 14;
+                }).length;
+
                 return (
                   <div
                     key={cell.dateStr}
                     onClick={() => handleDayCellClick(cell.dateStr, cell.date)}
-                    className={`min-h-[105px] md:min-h-[120px] p-2 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
+                    className={`min-h-[85px] sm:min-h-[105px] md:min-h-[115px] p-1.5 sm:p-2 rounded-xl border transition-all text-left flex flex-col justify-between cursor-pointer group ${
                       !cell.isCurrentMonth
                         ? 'opacity-40 bg-slate-50/30 dark:bg-slate-900/10 border-slate-200/40 dark:border-slate-800/40'
                         : isSelected
@@ -528,28 +543,25 @@ export default function CalendarPage() {
                       </span>
 
                       <div className="flex items-center gap-1">
-                        {/* Prominent Booking Count Badge */}
+                        {/* Prominent Total Count Badge */}
                         {cellAppointments.length > 0 && (
                           <span
-                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
-                            title={`${cellAppointments.length} bookings on ${cell.dateStr}`}
+                            className="text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
+                            title={`${cellAppointments.length} total bookings (${morningCount} Morning, ${eveningCount} Evening)`}
                           >
                             <Users className="w-2.5 h-2.5" />
                             <span>{cellAppointments.length}</span>
-                            <span className="hidden xl:inline text-[9px] font-medium opacity-80">
-                              {cellAppointments.length === 1 ? 'visit' : 'visits'}
-                            </span>
                           </span>
                         )}
 
                         {isToday && (
-                          <span className="text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1.5 py-0.5 rounded">
+                          <span className="text-[8px] sm:text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1 sm:px-1.5 py-0.5 rounded">
                             Today
                           </span>
                         )}
                         {cellLeaves.length > 0 && (
                           <span
-                            className="text-[9px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded truncate max-w-[50px]"
+                            className="text-[8px] sm:text-[9px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/15 border border-rose-500/30 px-1 rounded truncate max-w-[42px] sm:max-w-[50px]"
                             title={`Doctor on Leave: ${cellLeaves[0].leave_type || 'Leave'}`}
                           >
                             Leave
@@ -558,84 +570,53 @@ export default function CalendarPage() {
                       </div>
                     </div>
 
-                    {/* Middle: Shift indicator if configured */}
-                    {cell.isCurrentMonth && cellSchedules.length > 0 && cellAppointments.length === 0 && (
-                      <div className="text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate mt-1">
-                        {cellSchedules.map((s) => s.shift_type).join(' & ')}
-                      </div>
-                    )}
-
-                    {/* Bottom: Appointment Tokens or High-Capacity Summary */}
-                    <div className="space-y-1 mt-1.5">
-                      {/* When small count (1 or 2): show individual visit pills */}
-                      {cellAppointments.length <= 2 &&
-                        cellAppointments.map((apt) => (
-                          <div
-                            key={apt.id}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveAppointmentModal(apt);
-                            }}
-                            className={`px-1.5 py-0.5 rounded border text-[10px] font-medium truncate flex items-center justify-between hover:scale-[1.02] transition-transform ${getStatusColor(
-                              apt.status
-                            )}`}
-                            title={`Token #${apt.daily_token || '01'} - ${apt.patient_name || 'Patient'} (${formatTimeDisplay(
-                              apt.start_time
-                            )})`}
-                          >
-                            <span className="truncate">
-                              <span className="font-bold">#{apt.daily_token || '1'}</span>{' '}
-                              {apt.patient_name || 'Patient'}
-                            </span>
-                            <span className="text-[9px] font-mono opacity-80 ml-1 flex-shrink-0">
-                              {formatTimeDisplay(apt.start_time)}
-                            </span>
-                          </div>
-                        ))}
-
-                      {/* When booking count goes big (3 or more): show first visit + high-capacity count card */}
-                      {cellAppointments.length >= 3 && (
+                    {/* Middle / Bottom: Morning & Evening Shift Counts ONLY */}
+                    <div className="space-y-1 mt-1 sm:mt-1.5 flex-1 flex flex-col justify-end">
+                      {cellAppointments.length > 0 ? (
                         <>
+                          {/* Morning Count */}
                           <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveAppointmentModal(cellAppointments[0]);
-                            }}
-                            className={`px-1.5 py-0.5 rounded border text-[10px] font-medium truncate flex items-center justify-between hover:scale-[1.02] transition-transform ${getStatusColor(
-                              cellAppointments[0].status
-                            )}`}
-                            title={`First visit: Token #${cellAppointments[0].daily_token || '01'} - ${cellAppointments[0].patient_name}`}
+                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border text-[9px] sm:text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                              morningCount > 0
+                                ? 'bg-amber-500/10 dark:bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/25'
+                                : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
+                            }`}
+                            title={`${morningCount} morning visits`}
                           >
-                            <span className="truncate">
-                              <span className="font-bold">#{cellAppointments[0].daily_token || '1'}</span>{' '}
-                              {cellAppointments[0].patient_name}
+                            <span className="flex items-center gap-1 truncate">
+                              <span>🌅</span>
+                              <span className="hidden sm:inline">Morning:</span>
+                              <span className="sm:hidden">M:</span>
                             </span>
-                            <span className="text-[9px] font-mono opacity-80 ml-1 flex-shrink-0">
-                              {formatTimeDisplay(cellAppointments[0].start_time)}
+                            <span className={`font-bold ${morningCount > 0 ? 'text-amber-800 dark:text-amber-200' : 'text-slate-400'}`}>
+                              {morningCount}
                             </span>
                           </div>
 
-                          <div className="p-1.5 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/25 group-hover:bg-teal-500/20 transition-colors">
-                            <div className="flex items-center justify-between text-[10px] font-bold text-teal-800 dark:text-teal-200">
-                              <span className="flex items-center gap-1">
-                                <Users className="w-2.5 h-2.5" />
-                                {cellAppointments.length} Bookings
-                              </span>
-                              <span className="text-[9px] font-mono text-teal-600 dark:text-teal-400">
-                                Tokens #1–#{cellAppointments[cellAppointments.length - 1]?.daily_token || cellAppointments.length}
-                              </span>
-                            </div>
-                            <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold truncate">
-                                {cellAppointments.filter((a) => (a.status || '').toUpperCase() === 'CONFIRMED').length} Confirmed
-                              </span>
-                              <span className="text-teal-600 dark:text-teal-400 font-semibold group-hover:underline flex-shrink-0 ml-1">
-                                View Day →
-                              </span>
-                            </div>
+                          {/* Evening Count */}
+                          <div
+                            className={`px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border text-[9px] sm:text-[10px] font-semibold flex items-center justify-between transition-colors ${
+                              eveningCount > 0
+                                ? 'bg-indigo-500/10 dark:bg-indigo-500/15 text-indigo-800 dark:text-indigo-200 border-indigo-500/25'
+                                : 'bg-slate-100/50 dark:bg-slate-850/40 text-slate-400 dark:text-slate-500 border-transparent opacity-60'
+                            }`}
+                            title={`${eveningCount} evening visits`}
+                          >
+                            <span className="flex items-center gap-1 truncate">
+                              <span>🌆</span>
+                              <span className="hidden sm:inline">Evening:</span>
+                              <span className="sm:hidden">E:</span>
+                            </span>
+                            <span className={`font-bold ${eveningCount > 0 ? 'text-indigo-800 dark:text-indigo-200' : 'text-slate-400'}`}>
+                              {eveningCount}
+                            </span>
                           </div>
                         </>
-                      )}
+                      ) : cell.isCurrentMonth && cellSchedules.length > 0 ? (
+                        <div className="text-[8px] sm:text-[9px] text-slate-400 dark:text-slate-500 font-medium truncate mt-auto">
+                          {cellSchedules.map((s) => s.shift_type).join(' & ')}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 );

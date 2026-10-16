@@ -40,6 +40,7 @@ export default function OnboardingCreatePage() {
   const navigate = useNavigate();
   const { doctor, setDoctor, triggerToast } = useApp();
 
+  const [userName, setUserName] = useState(doctor?.name || '');
   const [pageName, setPageName] = useState(doctor?.name || 'sagar sharma');
   const [domain, setDomain] = useState(
     doctor?.bookingSlug || 'sagar-sharma'
@@ -63,16 +64,21 @@ export default function OnboardingCreatePage() {
     if (savedUser) {
       try {
         const u = JSON.parse(savedUser);
-        if (u.full_name) {
-          setPageName(u.full_name);
-          const slug = u.full_name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        const resolvedName = u.full_name || u.name;
+        if (resolvedName) {
+          setUserName(resolvedName);
+          setPageName(resolvedName);
+          const slug = resolvedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
           setDomain(slug);
         }
       } catch (e) {
         console.error(e);
       }
+    } else if (doctor?.name) {
+      setUserName(doctor.name);
+      setPageName(doctor.name);
     }
-  }, []);
+  }, [doctor]);
 
   // Check Domain Slug
   const handleCheckSlug = async () => {
@@ -178,7 +184,7 @@ export default function OnboardingCreatePage() {
 
           <div>
             <h1 className="text-sm sm:text-base font-bold font-serif text-[#0B192C] dark:text-white tracking-tight">
-              Good afternoon, {pageName}
+              Welcome, {userName || pageName || 'Doctor'}
             </h1>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 font-light">
               Set up your booking page and start accepting appointments.
