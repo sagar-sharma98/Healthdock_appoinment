@@ -23,6 +23,7 @@ import {
   RefreshCw,
   X,
   FileText,
+  Users,
 } from 'lucide-react';
 import CreateBookingModal from '../components/common/CreateBookingModal';
 
@@ -527,6 +528,20 @@ export default function CalendarPage() {
                       </span>
 
                       <div className="flex items-center gap-1">
+                        {/* Prominent Booking Count Badge */}
+                        {cellAppointments.length > 0 && (
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30 flex items-center gap-1 shadow-xs"
+                            title={`${cellAppointments.length} bookings on ${cell.dateStr}`}
+                          >
+                            <Users className="w-2.5 h-2.5" />
+                            <span>{cellAppointments.length}</span>
+                            <span className="hidden xl:inline text-[9px] font-medium opacity-80">
+                              {cellAppointments.length === 1 ? 'visit' : 'visits'}
+                            </span>
+                          </span>
+                        )}
+
                         {isToday && (
                           <span className="text-[9px] font-semibold text-teal-600 dark:text-teal-400 uppercase tracking-wider bg-teal-500/10 px-1.5 py-0.5 rounded">
                             Today
@@ -550,36 +565,76 @@ export default function CalendarPage() {
                       </div>
                     )}
 
-                    {/* Bottom: Appointment Tokens / Chips */}
+                    {/* Bottom: Appointment Tokens or High-Capacity Summary */}
                     <div className="space-y-1 mt-1.5">
-                      {cellAppointments.slice(0, 2).map((apt) => (
-                        <div
-                          key={apt.id}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveAppointmentModal(apt);
-                          }}
-                          className={`px-1.5 py-0.5 rounded border text-[10px] font-medium truncate flex items-center justify-between hover:scale-[1.02] transition-transform ${getStatusColor(
-                            apt.status
-                          )}`}
-                          title={`Token #${apt.daily_token || '01'} - ${apt.patient_name || 'Patient'} (${formatTimeDisplay(
-                            apt.start_time
-                          )})`}
-                        >
-                          <span className="truncate">
-                            <span className="font-bold">#{apt.daily_token || '1'}</span>{' '}
-                            {apt.patient_name || 'Patient'}
-                          </span>
-                          <span className="text-[9px] font-mono opacity-80 ml-1 flex-shrink-0">
-                            {formatTimeDisplay(apt.start_time)}
-                          </span>
-                        </div>
-                      ))}
+                      {/* When small count (1 or 2): show individual visit pills */}
+                      {cellAppointments.length <= 2 &&
+                        cellAppointments.map((apt) => (
+                          <div
+                            key={apt.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAppointmentModal(apt);
+                            }}
+                            className={`px-1.5 py-0.5 rounded border text-[10px] font-medium truncate flex items-center justify-between hover:scale-[1.02] transition-transform ${getStatusColor(
+                              apt.status
+                            )}`}
+                            title={`Token #${apt.daily_token || '01'} - ${apt.patient_name || 'Patient'} (${formatTimeDisplay(
+                              apt.start_time
+                            )})`}
+                          >
+                            <span className="truncate">
+                              <span className="font-bold">#{apt.daily_token || '1'}</span>{' '}
+                              {apt.patient_name || 'Patient'}
+                            </span>
+                            <span className="text-[9px] font-mono opacity-80 ml-1 flex-shrink-0">
+                              {formatTimeDisplay(apt.start_time)}
+                            </span>
+                          </div>
+                        ))}
 
-                      {cellAppointments.length > 2 && (
-                        <div className="text-[9px] font-bold text-teal-600 dark:text-teal-400 pl-1">
-                          +{cellAppointments.length - 2} more visit{cellAppointments.length - 2 > 1 ? 's' : ''}
-                        </div>
+                      {/* When booking count goes big (3 or more): show first visit + high-capacity count card */}
+                      {cellAppointments.length >= 3 && (
+                        <>
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAppointmentModal(cellAppointments[0]);
+                            }}
+                            className={`px-1.5 py-0.5 rounded border text-[10px] font-medium truncate flex items-center justify-between hover:scale-[1.02] transition-transform ${getStatusColor(
+                              cellAppointments[0].status
+                            )}`}
+                            title={`First visit: Token #${cellAppointments[0].daily_token || '01'} - ${cellAppointments[0].patient_name}`}
+                          >
+                            <span className="truncate">
+                              <span className="font-bold">#{cellAppointments[0].daily_token || '1'}</span>{' '}
+                              {cellAppointments[0].patient_name}
+                            </span>
+                            <span className="text-[9px] font-mono opacity-80 ml-1 flex-shrink-0">
+                              {formatTimeDisplay(cellAppointments[0].start_time)}
+                            </span>
+                          </div>
+
+                          <div className="p-1.5 rounded-lg bg-teal-500/10 dark:bg-teal-500/15 border border-teal-500/25 group-hover:bg-teal-500/20 transition-colors">
+                            <div className="flex items-center justify-between text-[10px] font-bold text-teal-800 dark:text-teal-200">
+                              <span className="flex items-center gap-1">
+                                <Users className="w-2.5 h-2.5" />
+                                {cellAppointments.length} Bookings
+                              </span>
+                              <span className="text-[9px] font-mono text-teal-600 dark:text-teal-400">
+                                Tokens #1–#{cellAppointments[cellAppointments.length - 1]?.daily_token || cellAppointments.length}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between text-[9px] text-slate-500 dark:text-slate-400 mt-0.5">
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold truncate">
+                                {cellAppointments.filter((a) => (a.status || '').toUpperCase() === 'CONFIRMED').length} Confirmed
+                              </span>
+                              <span className="text-teal-600 dark:text-teal-400 font-semibold group-hover:underline flex-shrink-0 ml-1">
+                                View Day →
+                              </span>
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>
