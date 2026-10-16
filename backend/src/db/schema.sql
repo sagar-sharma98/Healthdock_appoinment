@@ -121,6 +121,15 @@ CREATE TABLE booking_pages (
     slug VARCHAR(100) UNIQUE NOT NULL,        -- e.g. "sagar-sharma"
     description TEXT,                        -- e.g. "Welcome to my scheduling page..."
     logo_url TEXT,
+    logo_shape VARCHAR(30) DEFAULT 'Rounded',
+    color_mode VARCHAR(20) DEFAULT 'System',
+    remove_branding BOOLEAN DEFAULT FALSE,
+    layout_style VARCHAR(30) DEFAULT 'SPLIT_2_COL',
+    corner_radius VARCHAR(20) DEFAULT 'Rounded',
+    bg_style VARCHAR(30) DEFAULT 'Mesh Gradient',
+    card_finish VARCHAR(30) DEFAULT 'Glassmorphic',
+    cover_banner_url TEXT DEFAULT '',
+    button_style VARCHAR(20) DEFAULT 'Solid',
     theme VARCHAR(50) DEFAULT 'Modern Minimal', -- 'Retro Arcade', 'Claude', 'Claymorphism', etc.
     timezone VARCHAR(100) DEFAULT 'Asia/Kolkata',
     slot_duration_minutes INT DEFAULT 30,
@@ -152,9 +161,13 @@ CREATE TABLE availability_schedules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     doctor_profile_id UUID NOT NULL REFERENCES doctor_profiles(id) ON DELETE CASCADE,
     day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6), -- 0=Sun, 1=Mon, ..., 6=Sat
+    shift_type VARCHAR(50) DEFAULT 'MORNING',
+    slot_duration_minutes INT DEFAULT 30,
+    max_patients_per_slot INT DEFAULT 1,
+    max_accompanying_persons INT DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(doctor_profile_id, day_of_week)
+    UNIQUE(doctor_profile_id, day_of_week, shift_type)
 );
 
 CREATE TABLE schedule_time_blocks (
@@ -217,6 +230,18 @@ CREATE TABLE appointments (
     is_paid BOOLEAN DEFAULT FALSE,
     payment_method VARCHAR(50) DEFAULT 'PAY_AT_CLINIC',
     
+    consultation_mode VARCHAR(30) DEFAULT 'IN_PERSON',
+    branch_name VARCHAR(150) DEFAULT 'Main Clinic - Sector 18',
+    booking_for VARCHAR(30) DEFAULT 'MYSELF',
+    family_relation VARCHAR(50),
+    patient_age INT,
+    booker_name VARCHAR(150),
+    booker_phone VARCHAR(30),
+    whatsapp_updates_enabled BOOLEAN DEFAULT TRUE,
+    consent_record JSONB DEFAULT '{"dpdp_act_2026": true, "version": "1.0"}'::jsonb,
+    payment_status VARCHAR(30) DEFAULT 'PENDING',
+    razorpay_order_id VARCHAR(100),
+    razorpay_payment_id VARCHAR(100),
     booked_channel VARCHAR(30) DEFAULT 'ONLINE_BOOKING_LINK' CHECK (booked_channel IN ('ONLINE_BOOKING_LINK', 'WALK_IN_RECEPTION', 'PHONE_CALL')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -235,7 +260,82 @@ CREATE TABLE appointment_audit_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. ANALYTICS (Matches Dashboard Screenshot 3)
+-- 7. CLINIC BRANCHES & BOOKING FLOW ENHANCEMENTS
+CREATE TABLE clinic_branches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    address TEXT NOT NULL,
+    city VARCHAR(100) DEFAULT 'Delhi NCR',
+    phone VARCHAR(30),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE otp_verifications (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    phone VARCHAR(30) NOT NULL,
+    otp_code VARCHAR(10) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_verified BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_otp_phone ON otp_verifications(phone);
+
+CREATE TABLE consent_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    appointment_id UUID REFERENCES appointments(id) ON DELETE CASCADE,
+    consent_type VARCHAR(50) NOT NULL,
+    is_granted BOOLEAN NOT NULL,
+    actor_type VARCHAR(20) DEFAULT 'PATIENT',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 8. HOSPITAL HOLIDAYS & DOCTOR LEAVES
+CREATE TABLE hospital_holidays (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    title VARCHAR(200) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    holiday_type VARCHAR(50) DEFAULT 'PUBLIC',
+    description TEXT,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE doctor_leaves (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_profile_id UUID NOT NULL REFERENCES doctor_profiles(id) ON DELETE CASCADE,
+    organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    leave_type VARCHAR(50) DEFAULT 'CASUAL',
+    session VARCHAR(20) DEFAULT 'FULL_DAY',
+    reason TEXT,
+    status VARCHAR(30) DEFAULT 'APPROVED',
+    substitute_doctor_id UUID REFERENCES doctor_profiles(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX idx_hospital_holidays_dates ON hospital_holidays(start_date, end_date);
+CREATE INDEX idx_doctor_leaves_doctor_dates ON doctor_leaves(doctor_profile_id, start_date, end_date);
+
+-- 9. DOCTOR SLOT BLOCKS
+CREATE TABLE doctor_slot_blocks (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    doctor_profile_id UUID NOT NULL REFERENCES doctor_profiles(id) ON DELETE CASCADE,
+    block_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME,
+    reason VARCHAR(255) DEFAULT 'Blocked by Doctor',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (doctor_profile_id, block_date, start_time)
+);
+
+-- 10. ANALYTICS
 CREATE TABLE page_daily_analytics (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     booking_page_id UUID NOT NULL REFERENCES booking_pages(id) ON DELETE CASCADE,
